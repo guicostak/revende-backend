@@ -211,28 +211,19 @@ jobs:
           cache: maven
 
       - name: Cache do SonarCloud
-        if: env.SONAR_TOKEN != ''
         uses: actions/cache@v4
         with:
           path: ~/.sonar/cache
           key: sonar-${{ runner.os }}
 
       - name: Recuperar cobertura do estágio 3
-        if: env.SONAR_TOKEN != ''
         uses: actions/download-artifact@v5
         with:
           name: cobertura
           path: target/
 
       - name: SonarCloud
-        if: env.SONAR_TOKEN != ''
         run: mvn -B -DskipTests package sonar:sonar
-
-      - name: Sonar não configurado
-        if: env.SONAR_TOKEN == ''
-        run: |
-          echo "### ⏭️ Quality gate pulado" >> "$GITHUB_STEP_SUMMARY"
-          echo "O secret \`SONAR_TOKEN\` não existe. O estágio liga sozinho quando ele for criado." >> "$GITHUB_STEP_SUMMARY"
 
   # ─────────────────────────────────────────────────────────────
   # 7. Painel final: roda mesmo com estágio quebrado.
