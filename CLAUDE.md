@@ -206,7 +206,8 @@ Cada bug corrigido ganha um teste que falha antes do fix.
 Levantadas na análise do código atual — trate quando a task encostar nelas, e **não replique o padrão**:
 
 1. **Zero testes.** `src/test/java` está vazio.
-2. `revende.jwt.secret` hardcoded no `application.yml`, versionado.
+2. Segredo JWT tem **default de dev embutido** no `application.yml`; produção depende de
+   `REVENDE_JWT_SECRET` estar setado — não há validação de que foi trocado no boot.
 3. `ddl-auto: update` e sem Flyway — schema não versionado.
 4. Ownership de anúncio lança `IllegalArgumentException` → responde **400 em vez de 403**
    (`ListingService.ensureOwner`).

@@ -13,6 +13,9 @@ mvn spring-boot:run
 ```
 
 API em `http://localhost:8080`. O banco H2 sobe **vazio** a cada start:
+
+> **Segredo JWT:** em produção defina `REVENDE_JWT_SECRET` (≥ 32 bytes). Sem a variável,
+> a aplicação usa um valor padrão **apenas para desenvolvimento**.
 crie sua conta em `POST /api/auth/register` e um evento em `POST /api/events`.
 
 ## Endpoints

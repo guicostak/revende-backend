@@ -47,6 +47,7 @@ graph TD
 - 🔥 [[Dívidas Técnicas]] — o que está torto hoje
 - ❓ [[Perguntas em Aberto]] — o que ninguém decidiu ainda
 - 🗺️ `Revende.canvas` — visão espacial do domínio
+- 📋 [[Kanban]] — board de execução · [[Planejamento de Tasks]] — critérios de aceite
 
 ## Como manter isto vivo
 

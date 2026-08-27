@@ -19,7 +19,7 @@ server:
 
 revende:
   jwt:
-    secret: troque-este-segredo-por-uma-chave-bem-grande-de-pelo-menos-32-bytes
+    secret: ${REVENDE_JWT_SECRET:dev-only-nao-use-em-producao-troque-por-env-var-32bytes+}
     expiration-ms: 86400000
 
 # Para usar PostgreSQL, comente o bloco datasource acima e use:

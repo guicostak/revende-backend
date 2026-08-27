@@ -25,6 +25,8 @@ Esta decisão **só é aceitável** enquanto as três forem verdade:
 1. **O segredo sai do repositório** e passa a vir de variável de ambiente. Hoje está
    versionado em `application.yml` — enquanto estiver, qualquer pessoa com acesso ao código
    forja token de qualquer usuário. É bloqueador para produção.
+   **Atualizado em 2026-08-27:** o segredo saiu do arquivo (`${REVENDE_JWT_SECRET}` com default
+   de dev). Falta validar no boot que o default não está valendo fora de desenvolvimento.
 2. O sistema **não movimenta dinheiro** ([[RN-014 Plataforma não intermedia pagamento]]).
    Se a plataforma passar a intermediar pagamento, 24 h sem revogação deixa de ser aceitável.
 3. Falha de token é **logada**, não engolida (`catch (Exception ignored)` hoje em `JwtAuthFilter`).

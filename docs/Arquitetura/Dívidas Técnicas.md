@@ -10,7 +10,7 @@ aqui cada item ganha **impacto de negócio** e link para a regra afetada.
 | # | Dívida | Impacto | Regra afetada |
 |---|---|---|---|
 | 1 | Zero testes | Toda regra deste vault é promessa sem garantia | todas |
-| 2 | Segredo JWT versionado | Qualquer um com o repo forja token de qualquer conta | [[RN-003 Sessão stateless por JWT]] |
+| 2 | Produção depende de `REVENDE_JWT_SECRET` estar setado | Se a env var faltar, o default de dev vale em produção e qualquer um forja token | [[RN-003 Sessão stateless por JWT]] |
 | 3 | `ddl-auto: update`, sem Flyway | Schema não versionado; migração para prod é imprevisível | — |
 | 4 | Falta de posse responde 400 | Esconde tentativa de acesso indevido; front não distingue | [[RN-006 Apenas o dono altera o anúncio]] |
 | 5 | `catch (Exception ignored)` no filtro JWT | Falha de autenticação some sem log | [[RN-003 Sessão stateless por JWT]] |
