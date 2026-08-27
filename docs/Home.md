@@ -46,6 +46,7 @@ graph TD
 - 🧾 [[Índice de Decisões]] — ADRs
 - 🔥 [[Dívidas Técnicas]] — o que está torto hoje
 - ❓ [[Perguntas em Aberto]] — o que ninguém decidiu ainda
+- 💰 [[Business Model Canvas]] — modelo de negócio (board FigJam)
 - 🗺️ `Revende.canvas` — visão espacial do domínio
 - 📋 [[Kanban]] — board de execução · [[Planejamento de Tasks]] — critérios de aceite
 

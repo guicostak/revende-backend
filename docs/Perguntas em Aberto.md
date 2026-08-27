@@ -4,6 +4,8 @@ tags: [duvida, backlog]
 
 # Perguntas em Aberto
 
+> Estas mesmas questões estão no board FigJam do [[Business Model Canvas]].
+
 Decisões de negócio que o código **não** responde e que ninguém registrou. Cada uma
 vira uma [[Template - ADR|ADR]] quando for respondida. Enquanto estiverem aqui, qualquer
 implementação que dependa delas precisa de confirmação antes.
