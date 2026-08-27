@@ -4,6 +4,8 @@ tags: [plano, backlog]
 
 # Planejamento de Tasks
 
+> Cada task tem uma issue em https://github.com/guicostak/revende-backend/issues — T-01 a T-20 são as issues #1 a #20, D-01 a D-06 são #21 a #26.
+
 Board: [[Kanban]] · Regras: [[Índice de Regras]] · Contrato: [[CLAUDE]]
 
 Cada task tem **critério de aceite verificável**. Task sem teste não fecha — [[CLAUDE]] §3.
