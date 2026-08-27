@@ -42,6 +42,6 @@ deste vault.
 | D-05 | Teto ou aviso de ágio | [[RN-004 Preço de revenda é livre]] |
 | D-06 | Contato comprador ↔ vendedor | [[Perguntas em Aberto]] |
 
-As mesmas seis estão na coluna **🔒 Bloqueado** do [[Kanban]]. Resposta dada no board →
-vira [[Template - ADR|ADR]] em [[Índice de Decisões]] → destrava as tasks em
-[[Planejamento de Tasks]].
+Enquanto essas seis não forem respondidas, **não há plano de execução** — e é de propósito.
+Resposta dada no board vira [[Template - ADR|ADR]] em [[Índice de Decisões]], e só então
+faz sentido escrever tasks.
