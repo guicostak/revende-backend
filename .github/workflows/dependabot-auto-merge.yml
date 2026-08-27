@@ -1,0 +1,51 @@
+name: Dependabot auto-merge
+
+# pull_request_target garante token de escrita nas PRs do Dependabot.
+# É seguro aqui porque este workflow NUNCA faz checkout do código da PR:
+# ele só conversa com a API do GitHub. Não adicione um checkout abaixo.
+on: pull_request_target
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    name: Avaliar atualização
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.actor == 'dependabot[bot]'
+
+    steps:
+      - name: Ler metadados da atualização
+        id: meta
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Patch e minor: entram sozinhos SE a pipeline inteira passar.
+      # O --auto não mergeia na hora: ele agenda o merge para quando os
+      # checks obrigatórios ficarem verdes. Pipeline vermelha = não entra.
+      - name: Patch e minor entram sozinhos
+        if: |
+          steps.meta.outputs.update-type == 'version-update:semver-patch' ||
+          steps.meta.outputs.update-type == 'version-update:semver-minor'
+        run: |
+          gh pr review --approve "$PR_URL" \
+            --body "Atualização ${{ steps.meta.outputs.update-type }}. Merge automático assim que a pipeline passar."
+          gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Major nunca entra sozinha: quebra de API é o caso normal, não a exceção.
+      - name: Major fica para revisão humana
+        if: steps.meta.outputs.update-type == 'version-update:semver-major'
+        run: |
+          gh pr edit "$PR_URL" --add-label "revisao-manual" || true
+          gh pr comment "$PR_URL" --body "⚠️ **Atualização de versão maior** (\`${{ steps.meta.outputs.dependency-names }}\`).
+
+          Auto-merge **não** se aplica: mudança de major quebra API por definição. Esta PR precisa de branch, leitura das notas de versão e validação manual antes de entrar."
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
