@@ -5,7 +5,6 @@ import com.revende.backend.model.TicketListing;
 import com.revende.backend.model.TicketType;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-
 import java.math.BigDecimal;
 
 public class ListingDtos {
@@ -16,8 +15,7 @@ public class ListingDtos {
             @NotNull @Positive BigDecimal originalPrice,
             @NotNull @Positive BigDecimal price,
             @NotNull @Positive Integer quantity,
-            String description
-    ) {}
+            String description) {}
 
     public record ListingResponse(
             Long id,
@@ -29,8 +27,7 @@ public class ListingDtos {
             BigDecimal price,
             Integer quantity,
             String description,
-            ListingStatus status
-    ) {
+            ListingStatus status) {
         public static ListingResponse from(TicketListing l) {
             return new ListingResponse(
                     l.getId(),

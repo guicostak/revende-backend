@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Exclusões do SpotBugs.
+
+  Regra: só entra aqui padrão que é RUÍDO NESTE CONTEXTO, nunca bug real inconveniente.
+  Cada exclusão precisa de justificativa escrita.
+-->
+<FindBugsFilter>
+
+    <!--
+      EI_EXPOSE_REP / EI_EXPOSE_REP2: "expõe representação interna".
+      Em entidades JPA e em injeção de dependência do Spring, guardar e devolver a
+      referência é o comportamento exigido pelo framework: o Hibernate precisa da
+      mesma instância gerenciada, e clonar quebraria o mapeamento.
+      Quando as entidades virarem modelo de domínio imutável (ver CLAUDE.md §1),
+      esta exclusão deve ser reavaliada e provavelmente removida.
+    -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!--
+      CT_CONSTRUCTOR_THROW: construtor que lança exceção.
+      No JwtService é intencional: Keys.hmacShaKeyFor recusa segredo curto demais,
+      e falhar na subida da aplicação é exatamente o que queremos. O ataque de
+      finalizer que o padrão descreve não se aplica a um bean singleton do Spring.
+    -->
+    <Match>
+        <Bug pattern="CT_CONSTRUCTOR_THROW"/>
+    </Match>
+
+</FindBugsFilter>

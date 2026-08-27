@@ -43,33 +43,83 @@ public class TicketListing {
     @Column(nullable = false)
     private Instant createdAt = Instant.now();
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public Event getEvent() { return event; }
-    public void setEvent(Event event) { this.event = event; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public User getSeller() { return seller; }
-    public void setSeller(User seller) { this.seller = seller; }
+    public Event getEvent() {
+        return event;
+    }
 
-    public TicketType getTicketType() { return ticketType; }
-    public void setTicketType(TicketType ticketType) { this.ticketType = ticketType; }
+    public void setEvent(Event event) {
+        this.event = event;
+    }
 
-    public BigDecimal getOriginalPrice() { return originalPrice; }
-    public void setOriginalPrice(BigDecimal originalPrice) { this.originalPrice = originalPrice; }
+    public User getSeller() {
+        return seller;
+    }
 
-    public BigDecimal getPrice() { return price; }
-    public void setPrice(BigDecimal price) { this.price = price; }
+    public void setSeller(User seller) {
+        this.seller = seller;
+    }
 
-    public Integer getQuantity() { return quantity; }
-    public void setQuantity(Integer quantity) { this.quantity = quantity; }
+    public TicketType getTicketType() {
+        return ticketType;
+    }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public void setTicketType(TicketType ticketType) {
+        this.ticketType = ticketType;
+    }
 
-    public ListingStatus getStatus() { return status; }
-    public void setStatus(ListingStatus status) { this.status = status; }
+    public BigDecimal getOriginalPrice() {
+        return originalPrice;
+    }
 
-    public Instant getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+    public void setOriginalPrice(BigDecimal originalPrice) {
+        this.originalPrice = originalPrice;
+    }
+
+    public BigDecimal getPrice() {
+        return price;
+    }
+
+    public void setPrice(BigDecimal price) {
+        this.price = price;
+    }
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public ListingStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ListingStatus status) {
+        this.status = status;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
 }

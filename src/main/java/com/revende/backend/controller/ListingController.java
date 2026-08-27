@@ -4,12 +4,11 @@ import com.revende.backend.dto.ListingDtos.ListingRequest;
 import com.revende.backend.dto.ListingDtos.ListingResponse;
 import com.revende.backend.service.ListingService;
 import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/listings")
@@ -37,10 +36,8 @@ public class ListingController {
     }
 
     @PostMapping
-    public ResponseEntity<ListingResponse> create(@Valid @RequestBody ListingRequest req,
-                                                  Authentication auth) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(listingService.create(req, auth.getName()));
+    public ResponseEntity<ListingResponse> create(@Valid @RequestBody ListingRequest req, Authentication auth) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(listingService.create(req, auth.getName()));
     }
 
     @PatchMapping("/{id}/sold")

@@ -9,9 +9,8 @@ import com.revende.backend.model.TicketListing;
 import com.revende.backend.model.User;
 import com.revende.backend.repository.TicketListingRepository;
 import com.revende.backend.repository.UserRepository;
-import org.springframework.stereotype.Service;
-
 import java.util.List;
+import org.springframework.stereotype.Service;
 
 @Service
 public class ListingService {
@@ -20,9 +19,8 @@ public class ListingService {
     private final UserRepository userRepository;
     private final EventService eventService;
 
-    public ListingService(TicketListingRepository listingRepository,
-                          UserRepository userRepository,
-                          EventService eventService) {
+    public ListingService(
+            TicketListingRepository listingRepository, UserRepository userRepository, EventService eventService) {
         this.listingRepository = listingRepository;
         this.userRepository = userRepository;
         this.eventService = eventService;
@@ -41,8 +39,9 @@ public class ListingService {
 
     public List<ListingResponse> myListings(String email) {
         User seller = requireUser(email);
-        return listingRepository.findBySellerId(seller.getId())
-                .stream().map(ListingResponse::from).toList();
+        return listingRepository.findBySellerId(seller.getId()).stream()
+                .map(ListingResponse::from)
+                .toList();
     }
 
     public ListingResponse create(ListingRequest req, String sellerEmail) {
@@ -77,12 +76,12 @@ public class ListingService {
     }
 
     private TicketListing findEntity(Long id) {
-        return listingRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Anúncio não encontrado: " + id));
+        return listingRepository.findById(id).orElseThrow(() -> new NotFoundException("Anúncio não encontrado: " + id));
     }
 
     private User requireUser(String email) {
-        return userRepository.findByEmail(email)
+        return userRepository
+                .findByEmail(email)
                 .orElseThrow(() -> new NotFoundException("Usuário não encontrado: " + email));
     }
 

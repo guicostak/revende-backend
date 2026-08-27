@@ -19,10 +19,11 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
-    public AuthService(UserRepository userRepository,
-                       PasswordEncoder passwordEncoder,
-                       JwtService jwtService,
-                       AuthenticationManager authenticationManager) {
+    public AuthService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            JwtService jwtService,
+            AuthenticationManager authenticationManager) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
@@ -45,10 +46,10 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest req) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(req.email(), req.password()));
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(req.email(), req.password()));
 
-        User user = userRepository.findByEmail(req.email())
+        User user = userRepository
+                .findByEmail(req.email())
                 .orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas"));
 
         String token = jwtService.generateToken(user.getEmail());

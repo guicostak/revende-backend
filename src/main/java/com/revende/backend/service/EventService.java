@@ -5,9 +5,8 @@ import com.revende.backend.dto.EventDtos.EventResponse;
 import com.revende.backend.exception.NotFoundException;
 import com.revende.backend.model.Event;
 import com.revende.backend.repository.EventRepository;
-import org.springframework.stereotype.Service;
-
 import java.util.List;
+import org.springframework.stereotype.Service;
 
 @Service
 public class EventService {
@@ -35,8 +34,7 @@ public class EventService {
     }
 
     public Event findEntity(Long id) {
-        return eventRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Evento não encontrado: " + id));
+        return eventRepository.findById(id).orElseThrow(() -> new NotFoundException("Evento não encontrado: " + id));
     }
 
     public EventResponse create(EventRequest req) {

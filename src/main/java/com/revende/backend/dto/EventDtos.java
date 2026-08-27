@@ -3,7 +3,6 @@ package com.revende.backend.dto;
 import com.revende.backend.model.Event;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-
 import java.time.LocalDateTime;
 
 public class EventDtos {
@@ -15,8 +14,7 @@ public class EventDtos {
             @NotBlank String venue,
             @NotBlank String city,
             String category,
-            String imageUrl
-    ) {}
+            String imageUrl) {}
 
     public record EventResponse(
             Long id,
@@ -26,12 +24,17 @@ public class EventDtos {
             String venue,
             String city,
             String category,
-            String imageUrl
-    ) {
+            String imageUrl) {
         public static EventResponse from(Event e) {
             return new EventResponse(
-                    e.getId(), e.getName(), e.getDescription(), e.getDate(),
-                    e.getVenue(), e.getCity(), e.getCategory(), e.getImageUrl());
+                    e.getId(),
+                    e.getName(),
+                    e.getDescription(),
+                    e.getDate(),
+                    e.getVenue(),
+                    e.getCity(),
+                    e.getCategory(),
+                    e.getImageUrl());
         }
     }
 }

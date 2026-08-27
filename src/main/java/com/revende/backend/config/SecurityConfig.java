@@ -1,6 +1,7 @@
 package com.revende.backend.config;
 
 import com.revende.backend.security.JwtAuthFilter;
+import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -17,8 +18,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.List;
-
 @Configuration
 public class SecurityConfig {
 
@@ -30,14 +29,16 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(AbstractHttpConfigurer::disable)
+        http.csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/listings/**").permitAll()
-                        .anyRequest().authenticated())
+                .authorizeHttpRequests(auth -> auth.requestMatchers("/api/auth/**")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/events/**")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/listings/**")
+                        .permitAll()
+                        .anyRequest()
+                        .authenticated())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

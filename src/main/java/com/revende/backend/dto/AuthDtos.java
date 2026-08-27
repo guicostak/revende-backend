@@ -10,18 +10,9 @@ public class AuthDtos {
             @NotBlank String name,
             @NotBlank @Email String email,
             @NotBlank @Size(min = 6, message = "A senha deve ter ao menos 6 caracteres") String password,
-            String phone
-    ) {}
+            String phone) {}
 
-    public record LoginRequest(
-            @NotBlank @Email String email,
-            @NotBlank String password
-    ) {}
+    public record LoginRequest(@NotBlank @Email String email, @NotBlank String password) {}
 
-    public record AuthResponse(
-            String token,
-            Long userId,
-            String name,
-            String email
-    ) {}
+    public record AuthResponse(String token, Long userId, String name, String email) {}
 }
