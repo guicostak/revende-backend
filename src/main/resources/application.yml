@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: revende-backend
+  datasource:
+    url: jdbc:h2:mem:revende;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: 8080
+
+revende:
+  jwt:
+    secret: troque-este-segredo-por-uma-chave-bem-grande-de-pelo-menos-32-bytes
+    expiration-ms: 86400000
+
+# Para usar PostgreSQL, comente o bloco datasource acima e use:
+# spring:
+#   datasource:
+#     url: jdbc:postgresql://localhost:5432/revende
+#     username: revende
+#     password: revende
+#   jpa:
+#     database-platform: org.hibernate.dialect.PostgreSQLDialect

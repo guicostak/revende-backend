@@ -1,0 +1,11 @@
+{
+  "useMarkdownLinks": false,
+  "newLinkFormat": "shortest",
+  "alwaysUpdateLinks": true,
+  "newFileLocation": "folder",
+  "newFileFolderPath": "docs",
+  "attachmentFolderPath": "docs/anexos",
+  "showUnsupportedFiles": false,
+  "defaultViewMode": "preview",
+  "readableLineLength": true
+}

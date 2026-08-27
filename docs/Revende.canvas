@@ -1,0 +1,44 @@
+{
+  "nodes": [
+    {"id":"n-titulo","type":"text","text":"# 🎟️ Revende — mapa do domínio\n\nAbra as notas com duplo clique.\nContrato de arquitetura: **CLAUDE.md**","x":-620,"y":-520,"width":420,"height":140},
+    {"id":"n-claude","type":"file","file":"CLAUDE.md","x":-620,"y":-320,"width":420,"height":320},
+    {"id":"n-home","type":"file","file":"docs/Home.md","x":-620,"y":60,"width":420,"height":300},
+
+    {"id":"n-ident","type":"file","file":"docs/Domínio/Contexto Identity.md","x":-60,"y":-460,"width":400,"height":300},
+    {"id":"n-cat","type":"file","file":"docs/Domínio/Contexto Catalog.md","x":-60,"y":-100,"width":400,"height":300},
+    {"id":"n-mkt","type":"file","file":"docs/Domínio/Contexto Marketplace.md","x":-60,"y":260,"width":400,"height":340},
+
+    {"id":"n-user","type":"file","file":"docs/Domínio/Usuário.md","x":420,"y":-460,"width":380,"height":300},
+    {"id":"n-event","type":"file","file":"docs/Domínio/Evento.md","x":420,"y":-100,"width":380,"height":300},
+    {"id":"n-listing","type":"file","file":"docs/Domínio/Anúncio de Ingresso.md","x":420,"y":260,"width":380,"height":340},
+
+    {"id":"n-status","type":"file","file":"docs/Domínio/Status do Anúncio.md","x":880,"y":260,"width":360,"height":250},
+    {"id":"n-tipo","type":"file","file":"docs/Domínio/Tipo de Ingresso.md","x":880,"y":540,"width":360,"height":220},
+
+    {"id":"n-regras","type":"file","file":"docs/Regras/Índice de Regras.md","x":880,"y":-460,"width":360,"height":320},
+    {"id":"n-ucs","type":"file","file":"docs/Casos de Uso/Índice de Casos de Uso.md","x":880,"y":-100,"width":360,"height":320},
+
+    {"id":"n-furos","type":"text","text":"## 🐞 Furos confirmados\n\n- Não-dono → **400** (deveria ser 403) — RN-006\n- Transição de status **não validada** — RN-007\n- Login errado → **500** (deveria ser 401) — UC-02\n- `/listings/me` sem token → **500** — UC-08\n- `city` + `name` → `name` ignorado — RN-013","x":-620,"y":420,"width":420,"height":300},
+    {"id":"n-aberto","type":"file","file":"docs/Perguntas em Aberto.md","x":1300,"y":-100,"width":380,"height":320},
+    {"id":"n-arq","type":"file","file":"docs/Arquitetura/Arquitetura Hexagonal.md","x":1300,"y":-460,"width":380,"height":320},
+    {"id":"n-adr","type":"file","file":"docs/Decisões/Índice de Decisões.md","x":1300,"y":260,"width":380,"height":280}
+  ],
+  "edges": [
+    {"id":"e1","fromNode":"n-claude","fromSide":"bottom","toNode":"n-home","toSide":"top","label":"contrato"},
+    {"id":"e2","fromNode":"n-home","fromSide":"right","toNode":"n-ident","toSide":"left"},
+    {"id":"e3","fromNode":"n-home","fromSide":"right","toNode":"n-cat","toSide":"left"},
+    {"id":"e4","fromNode":"n-home","fromSide":"right","toNode":"n-mkt","toSide":"left"},
+    {"id":"e5","fromNode":"n-ident","fromSide":"right","toNode":"n-user","toSide":"left"},
+    {"id":"e6","fromNode":"n-cat","fromSide":"right","toNode":"n-event","toSide":"left"},
+    {"id":"e7","fromNode":"n-mkt","fromSide":"right","toNode":"n-listing","toSide":"left"},
+    {"id":"e8","fromNode":"n-listing","fromSide":"right","toNode":"n-status","toSide":"left"},
+    {"id":"e9","fromNode":"n-listing","fromSide":"right","toNode":"n-tipo","toSide":"left"},
+    {"id":"e10","fromNode":"n-user","fromSide":"right","toNode":"n-regras","toSide":"left","label":"regras"},
+    {"id":"e11","fromNode":"n-event","fromSide":"right","toNode":"n-ucs","toSide":"left","label":"casos de uso"},
+    {"id":"e12","fromNode":"n-listing","fromSide":"top","toNode":"n-ucs","toSide":"bottom"},
+    {"id":"e13","fromNode":"n-regras","fromSide":"right","toNode":"n-arq","toSide":"left"},
+    {"id":"e14","fromNode":"n-ucs","fromSide":"right","toNode":"n-aberto","toSide":"left"},
+    {"id":"e15","fromNode":"n-arq","fromSide":"bottom","toNode":"n-adr","toSide":"top"},
+    {"id":"e16","fromNode":"n-status","fromSide":"right","toNode":"n-adr","toSide":"left"}
+  ]
+}
