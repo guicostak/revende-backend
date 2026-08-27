@@ -1,4 +1,4 @@
-name: CI
+name: Pipeline
 
 on:
   push:
@@ -7,31 +7,206 @@ on:
     branches: [main]
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: pipeline-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
+  security-events: write
+  pull-requests: read
+
+env:
+  JAVA_VERSION: '21'
 
 jobs:
-  build:
-    name: Build, formatação, testes e Sonar
+  # ─────────────────────────────────────────────────────────────
+  # 1. Falha rápido: erro de formatação ou de workflow em ~30s,
+  #    sem gastar runner nos estágios seguintes.
+  # ─────────────────────────────────────────────────────────────
+  validacao:
+    name: 1 · Validação
     runs-on: ubuntu-latest
-    env:
-      # Vazio até o secret existir. Os passos do Sonar se auto-desligam sem ele.
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
+    timeout-minutes: 5
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-        with:
-          # O Sonar precisa do histórico completo para atribuir código novo a cada autor
-          fetch-depth: 0
+      - uses: actions/checkout@v5
 
-      - name: JDK 21
+      - name: JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v5
         with:
-          java-version: '21'
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Descritor Maven é válido
+        run: mvn -B validate
+
+      - name: Formatação do código (Spotless)
+        run: mvn -B spotless:check
+
+      - name: Sintaxe dos workflows (actionlint)
+        uses: reviewdog/action-actionlint@v1
+        with:
+          reporter: github-check
+          fail_level: error
+
+  # ─────────────────────────────────────────────────────────────
+  # 2. Compila e empacota. O .jar vira artefato baixável.
+  # ─────────────────────────────────────────────────────────────
+  build:
+    name: 2 · Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: validacao
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Compilar e empacotar
+        run: mvn -B -DskipTests package
+
+      - name: Publicar artefato
+        uses: actions/upload-artifact@v5
+        with:
+          name: aplicacao-jar
+          path: target/*.jar
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────
+  # 3 a 5 rodam EM PARALELO depois do build.
+  # ─────────────────────────────────────────────────────────────
+  testes:
+    name: 3 · Testes e cobertura
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: build
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Executar testes
+        run: mvn -B verify
+
+      - name: Resumo dos testes
+        if: always()
+        run: |
+          {
+            echo "### 🧪 Testes"
+            if [ -d target/surefire-reports ]; then
+              total=$(grep -ho 'tests="[0-9]*"' target/surefire-reports/*.xml | grep -o '[0-9]*' | paste -sd+ | bc)
+              falhas=$(grep -ho 'failures="[0-9]*"' target/surefire-reports/*.xml | grep -o '[0-9]*' | paste -sd+ | bc)
+              erros=$(grep -ho 'errors="[0-9]*"' target/surefire-reports/*.xml | grep -o '[0-9]*' | paste -sd+ | bc)
+              echo "| Total | Falhas | Erros |"
+              echo "|---|---|---|"
+              echo "| ${total:-0} | ${falhas:-0} | ${erros:-0} |"
+            else
+              echo "Nenhum relatório de teste encontrado."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publicar cobertura
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: cobertura
+          path: |
+            target/site/jacoco/
+            target/surefire-reports/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  analise:
+    name: 4 · Análise estática
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: build
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: SpotBugs
+        run: mvn -B spotbugs:check
+
+      - name: Publicar relatório
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: spotbugs
+          path: target/spotbugsXml.xml
+          if-no-files-found: ignore
+          retention-days: 7
+
+  seguranca:
+    name: 5 · Segurança
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: build
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      # Só em PR: compara a árvore de dependências contra a base.
+      - name: Dependências novas com vulnerabilidade
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
+      - name: CodeQL — inicializar
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java
+
+      - name: CodeQL — compilar
+        run: mvn -B -DskipTests compile
+
+      - name: CodeQL — analisar
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:java
+
+  # ─────────────────────────────────────────────────────────────
+  # 6. Quality gate: consome a cobertura produzida no estágio 3.
+  # ─────────────────────────────────────────────────────────────
+  qualidade:
+    name: 6 · Quality gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: testes
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
           distribution: temurin
           cache: maven
 
@@ -42,27 +217,57 @@ jobs:
           path: ~/.sonar/cache
           key: sonar-${{ runner.os }}
 
-      - name: Formatação (Spotless)
-        run: mvn -B spotless:check
-
-      - name: Build e testes
-        run: mvn -B verify
-
-      - name: Análise estática (SpotBugs)
-        run: mvn -B spotbugs:check
+      - name: Recuperar cobertura do estágio 3
+        if: env.SONAR_TOKEN != ''
+        uses: actions/download-artifact@v5
+        with:
+          name: cobertura
+          path: target/
 
       - name: SonarCloud
         if: env.SONAR_TOKEN != ''
-        run: mvn -B sonar:sonar
+        run: mvn -B -DskipTests package sonar:sonar
 
-      - name: Relatórios
-        if: always()
-        uses: actions/upload-artifact@v5
-        with:
-          name: relatorios
-          path: |
-            target/surefire-reports/
-            target/site/jacoco/
-            target/spotbugsXml.xml
-          if-no-files-found: ignore
-          retention-days: 7
+      - name: Sonar não configurado
+        if: env.SONAR_TOKEN == ''
+        run: |
+          echo "### ⏭️ Quality gate pulado" >> "$GITHUB_STEP_SUMMARY"
+          echo "O secret \`SONAR_TOKEN\` não existe. O estágio liga sozinho quando ele for criado." >> "$GITHUB_STEP_SUMMARY"
+
+  # ─────────────────────────────────────────────────────────────
+  # 7. Painel final: roda mesmo com estágio quebrado.
+  # ─────────────────────────────────────────────────────────────
+  resumo:
+    name: 7 · Resumo
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [validacao, build, testes, analise, seguranca, qualidade]
+    if: always()
+    steps:
+      - name: Montar painel
+        run: |
+          icone() { case "$1" in
+            success) echo "✅ passou" ;;
+            failure) echo "❌ falhou" ;;
+            cancelled) echo "⚪ cancelado" ;;
+            skipped) echo "⏭️ pulado" ;;
+            *) echo "❔ $1" ;;
+          esac; }
+          {
+            echo "## Pipeline · ${{ github.ref_name }}"
+            echo ""
+            echo "| # | Estágio | Resultado |"
+            echo "|---|---------|-----------|"
+            echo "| 1 | Validação (formato, workflows) | $(icone '${{ needs.validacao.result }}') |"
+            echo "| 2 | Build e empacotamento | $(icone '${{ needs.build.result }}') |"
+            echo "| 3 | Testes e cobertura | $(icone '${{ needs.testes.result }}') |"
+            echo "| 4 | Análise estática (SpotBugs) | $(icone '${{ needs.analise.result }}') |"
+            echo "| 5 | Segurança (CodeQL, dependências) | $(icone '${{ needs.seguranca.result }}') |"
+            echo "| 6 | Quality gate (SonarCloud) | $(icone '${{ needs.qualidade.result }}') |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Reprovar se algum estágio falhou
+        if: contains(needs.*.result, 'failure')
+        run: |
+          echo "Pelo menos um estágio falhou. Veja o painel acima."
+          exit 1
