@@ -318,6 +318,7 @@ jobs:
           image: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/revende/${{ vars.CLOUD_RUN_SERVICE }}:${{ github.sha }}
           flags: >-
             --allow-unauthenticated
+            --service-account=revende-runtime@citric-proxy-506900-k8.iam.gserviceaccount.com
             --min-instances=0
             --max-instances=3
             --cpu=1
