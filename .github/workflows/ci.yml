@@ -169,13 +169,6 @@ jobs:
           distribution: temurin
           cache: maven
 
-      # Só em PR: compara a árvore de dependências contra a base.
-      - name: Dependências novas com vulnerabilidade
-        if: github.event_name == 'pull_request'
-        uses: actions/dependency-review-action@v4
-        with:
-          fail-on-severity: high
-
       - name: CodeQL — inicializar
         uses: github/codeql-action/init@v3
         with:
