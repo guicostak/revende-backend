@@ -249,6 +249,8 @@ jobs:
             echo "| Análise estática (SpotBugs) | $(icone '${{ needs.analise.result }}') |"
             echo "| Segurança (CodeQL, dependências) | $(icone '${{ needs.seguranca.result }}') |"
             echo "| Quality gate (SonarCloud) | $(icone '${{ needs.qualidade.result }}') |"
+            echo ""
+            echo "Deploy sai quando a mensagem do commit em \`main\` contém \`#deployuat\`, ou por disparo manual."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Reprovar se algum estágio falhou
@@ -266,7 +268,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: resumo
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+    # Deploy sob demanda: só sai quando a mensagem do commit pede, ou por disparo manual.
+    # Evita publicar a cada merge sem que ninguém tenha decidido publicar.
+    if: >-
+      github.ref == 'refs/heads/main' && (
+        (github.event_name == 'push' && contains(github.event.head_commit.message, '#deployuat'))
+        || github.event_name == 'workflow_dispatch'
+      )
     environment: production
 
     permissions:
