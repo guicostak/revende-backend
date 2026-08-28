@@ -43,6 +43,7 @@ graph TD
 - 📜 [[Índice de Regras]] — 14 regras de negócio (RN-001…RN-014)
 - 🎬 [[Índice de Casos de Uso]] — 11 casos de uso (UC-01…UC-11)
 - 🧩 [[Arquitetura Hexagonal]] · [[Qualidade de Código]] · [[Mapa de Migração]]
+- 📚 Base técnica: [[Hexagonal na prática]] · [[Desenho de Agregados]] · [[Modelagem PostgreSQL]] · [[Armadilhas do Spring Data JPA]]
 - 🧾 [[Índice de Decisões]] — ADRs
 - 🔥 [[Dívidas Técnicas]] — o que está torto hoje
 - ❓ [[Perguntas em Aberto]] — o que ninguém decidiu ainda

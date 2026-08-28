@@ -197,6 +197,11 @@ Cada bug corrigido ganha um teste que falha antes do fix.
 
 > O domínio foi zerado para ser remodelado. Esta seção é a régua dessa remodelagem.
 
+> **Aprofundamento** (não normativo, com fontes): `docs/Arquitetura/` — `Desenho de Agregados`
+> para as regras de Vernon, `Modelagem PostgreSQL` para o schema, `Armadilhas do Spring
+> Data JPA` para o que o Hibernate castiga, `Hexagonal na prática` para onde a arquitetura
+> vira cerimônia.
+
 ### 3.1 Comece pelo agregado, não pela tabela
 
 A pergunta não é "quais tabelas preciso", é **"o que precisa mudar junto, numa transação, para o dado nunca ficar inconsistente?"**. Esse conjunto é um agregado, e ele tem uma raiz — a única classe que o mundo de fora enxerga.
