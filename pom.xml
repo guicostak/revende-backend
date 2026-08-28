@@ -23,6 +23,9 @@
     <spotless.version>2.44.0</spotless.version>
     <palantir.version>2.50.0</palantir.version>
     <spotbugs.version>4.8.6.6</spotbugs.version>
+    <!-- 1.19.8 do Spring Boot negocia API Docker 1.32; Docker 29 exige >= 1.40 -->
+    <testcontainers.version>1.21.3</testcontainers.version>
+
     <sonar.scanner.version>5.0.0.4389</sonar.scanner.version>
 
     <!-- SonarCloud: confirmar organization/projectKey ao criar o projeto -->
@@ -52,10 +55,18 @@
 
     <!-- Banco de dados -->
     <dependency>
-      <groupId>com.h2database</groupId>
-      <artifactId>h2</artifactId>
-      <scope>runtime</scope>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-database-postgresql</artifactId>
+    </dependency>
+
     <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
@@ -91,6 +102,21 @@
       <artifactId>spring-security-test</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-testcontainers</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -98,6 +124,18 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+
+      <!-- docker-java pede API 1.32 por padrão e o Docker 29 recusa (mínimo 1.40).
+           1.43 é suportada do Docker 24 ao 29, então serve local e no CI. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <systemPropertyVariables>
+            <api.version>1.43</api.version>
+          </systemPropertyVariables>
+        </configuration>
       </plugin>
 
       <!-- Formatação: o "eslint" do Java. spotless:apply corrige, spotless:check reprova. -->

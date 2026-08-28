@@ -1,0 +1,10 @@
+target/
+.git/
+.github/
+.obsidian/
+docs/
+*.md
+!README.md
+.idea/
+.vscode/
+.DS_Store
