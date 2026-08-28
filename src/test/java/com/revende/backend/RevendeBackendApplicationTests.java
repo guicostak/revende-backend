@@ -9,8 +9,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Sobe um PostgreSQL real, roda as migrações do Flyway nele e valida o contexto contra
- * o banco de verdade. Prova três coisas de uma vez: as migrações aplicam do zero, o
- * mapeamento JPA bate com o schema (ddl-auto: validate) e os beans resolvem.
+ * o banco de verdade. Enquanto não houver domínio, prova que o esqueleto está de pé.
  */
 @SpringBootTest
 @Testcontainers
