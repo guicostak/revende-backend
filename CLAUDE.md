@@ -112,20 +112,25 @@ com.revende.backend
 7. Um contexto (`marketplace`) só fala com outro (`catalog`) através de um **port de saída**,
    nunca importando o service do outro.
 
-### 1.5 Mapa: código atual → destino
+### 1.5 Ordem de construção
 
-| Hoje | Vai para |
-|---|---|
-| `controller/ListingController` | `marketplace/adapter/in/web/ListingController` |
-| `dto/ListingDtos` | `marketplace/adapter/in/web/dto/` (um record por arquivo) |
-| `service/ListingService` | quebrar em `application/service/*Service`, um por caso de uso |
-| `model/TicketListing` (@Entity) | `domain/model/TicketListing` (puro) + `adapter/out/persistence/TicketListingJpaEntity` |
-| `repository/TicketListingRepository` | `adapter/out/persistence/` + ports em `application/port/out/` |
-| `security/`, `config/SecurityConfig` | `shared/config/` e `identity/adapter/in/web/security/` |
-| `exception/GlobalExceptionHandler` | `shared/adapter/in/web/` |
+O domínio está zerado. Construa **de dentro para fora**, um contexto por vez —
+começando por `marketplace`, que é o mais rico em regra e serve de referência.
 
-**Migração é incremental.** Não reescreva tudo de uma vez: mova um contexto por task,
-começando por `marketplace`. Código novo já nasce na estrutura nova.
+| # | Passo | Só avance quando |
+|---|---|---|
+| 1 | Agregado de domínio puro, com invariantes | Teste unitário cobre caso feliz, borda e proibido — sem Spring, em milissegundos |
+| 2 | Ports de saída (interfaces) | O caso de uso compila sem saber que existe banco |
+| 3 | Um service por caso de uso, implementando o port de entrada | Teste com mock dos ports cobre orquestração e erro |
+| 4 | Entidade JPA + mapper + adapter de persistência | Teste de mapeamento ida e volta passa |
+| 5 | Migração Flyway do schema novo | `ddl-auto: validate` aceita, migração aplica do zero |
+| 6 | Controller, DTOs e mapeamento HTTP | Teste de API cobre os status de cada caminho de erro |
+
+**A ordem importa.** Escrever a entidade JPA primeiro é o caminho mais curto para o
+modelo anêmico da v1: o schema passa a ditar o domínio, em vez do contrário.
+
+**Sinal de que deu certo:** abrir `marketplace/domain/` e ler as regras de negócio
+inteiras, sem um `import` de framework.
 
 ### 1.6 Como proteger a arquitetura
 
