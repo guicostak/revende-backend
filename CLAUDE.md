@@ -90,7 +90,7 @@ com.revende.backend
 
 | Camada | Pode | **Não pode**, nunca |
 |---|---|---|
-| `domain/` | Java puro, regras de negócio, invariantes, VOs imutáveis | `org.springframework.*`, `jakarta.persistence.*`, `jakarta.validation.*`, Jackson, Lombok mágico |
+| `domain/` | Entidades JPA com Lombok (`@Data`, `@Builder`), enums, regras simples | Regra de negócio complexa espalhada, acesso a HTTP |
 | `application/` | `@Service`, `@Transactional`, ports, orquestração | Tipos HTTP (`ResponseEntity`, `Authentication`), entidades JPA, SQL |
 | `adapter/in/web` | `@RestController`, DTOs, validação Bean, mapeamento HTTP↔domínio | Regra de negócio, acesso a repositório |
 | `adapter/out/persistence` | `@Entity` JPA, Spring Data, mapeamento domínio↔tabela | Regra de negócio, decisão de fluxo |
@@ -147,6 +147,8 @@ não desabilite para "passar" uma task.**
 
 - Java 21: use `record` para DTOs e VOs, `sealed` para hierarquias fechadas, pattern matching.
 - **Injeção por construtor**, sempre. Nunca `@Autowired` em campo.
+- Entidades usam **Lombok**: `@Data`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor`.
+  Exclua relações e campos sensíveis do `toString` — ver `docs/Arquitetura/Armadilhas do Spring Data JPA`.
 - Campos `final` por padrão. Objetos de domínio imutáveis sempre que possível.
 - Nada de `null` em API pública: use `Optional` no retorno de busca, ou lance exceção.
 - `BigDecimal` para dinheiro — nunca `double`/`float`. Comparar com `compareTo`, não `equals`.
