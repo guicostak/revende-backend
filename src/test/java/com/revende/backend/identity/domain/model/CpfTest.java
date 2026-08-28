@@ -3,7 +3,7 @@ package com.revende.backend.identity.domain.model;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.revende.backend.identity.domain.exception.InvalidCpfException;
+import com.revende.backend.shared.domain.exception.ValidationException;
 import org.junit.jupiter.api.Test;
 
 class CpfTest {
@@ -17,17 +17,17 @@ class CpfTest {
 
     @Test
     void shouldRejectWrongCheckDigit() {
-        assertThatThrownBy(() -> new Cpf("52998224726")).isInstanceOf(InvalidCpfException.class);
+        assertThatThrownBy(() -> new Cpf("52998224726")).isInstanceOf(ValidationException.class);
     }
 
     @Test
     void shouldRejectRepeatedDigitsEvenWhenCheckDigitMatches() {
-        assertThatThrownBy(() -> new Cpf("11111111111")).isInstanceOf(InvalidCpfException.class);
+        assertThatThrownBy(() -> new Cpf("11111111111")).isInstanceOf(ValidationException.class);
     }
 
     @Test
     void shouldRejectWrongLength() {
-        assertThatThrownBy(() -> new Cpf("529982247")).isInstanceOf(InvalidCpfException.class);
+        assertThatThrownBy(() -> new Cpf("529982247")).isInstanceOf(ValidationException.class);
     }
 
     @Test

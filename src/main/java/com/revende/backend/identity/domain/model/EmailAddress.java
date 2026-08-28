@@ -1,6 +1,6 @@
 package com.revende.backend.identity.domain.model;
 
-import com.revende.backend.identity.domain.exception.InvalidEmailException;
+import com.revende.backend.shared.domain.exception.ValidationException;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -15,14 +15,14 @@ public record EmailAddress(String value) {
 
     public EmailAddress {
         if (value == null || value.isBlank()) {
-            throw new InvalidEmailException("E-mail é obrigatório");
+            throw new ValidationException("E-mail é obrigatório");
         }
         value = value.trim().toLowerCase(Locale.ROOT);
         if (value.length() > MAX_LENGTH) {
-            throw new InvalidEmailException("E-mail excede " + MAX_LENGTH + " caracteres");
+            throw new ValidationException("E-mail excede " + MAX_LENGTH + " caracteres");
         }
         if (!FORMAT.matcher(value).matches()) {
-            throw new InvalidEmailException("E-mail em formato inválido");
+            throw new ValidationException("E-mail em formato inválido");
         }
     }
 

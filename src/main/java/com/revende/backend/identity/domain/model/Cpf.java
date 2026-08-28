@@ -1,6 +1,6 @@
 package com.revende.backend.identity.domain.model;
 
-import com.revende.backend.identity.domain.exception.InvalidCpfException;
+import com.revende.backend.shared.domain.exception.ValidationException;
 
 /**
  * CPF do vendedor, armazenado sem máscara. Exigido pelo gateway no cadastro do recebedor,
@@ -12,14 +12,14 @@ public record Cpf(String value) {
 
     public Cpf {
         if (value == null || value.isBlank()) {
-            throw new InvalidCpfException("CPF é obrigatório");
+            throw new ValidationException("CPF é obrigatório");
         }
         value = value.replaceAll("\\D", "");
         if (value.length() != LENGTH) {
-            throw new InvalidCpfException("CPF deve ter " + LENGTH + " dígitos");
+            throw new ValidationException("CPF deve ter " + LENGTH + " dígitos");
         }
         if (allDigitsEqual(value) || !checkDigitsMatch(value)) {
-            throw new InvalidCpfException("CPF inválido");
+            throw new ValidationException("CPF inválido");
         }
     }
 

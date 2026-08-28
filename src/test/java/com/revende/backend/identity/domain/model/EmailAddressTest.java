@@ -3,7 +3,7 @@ package com.revende.backend.identity.domain.model;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.revende.backend.identity.domain.exception.InvalidEmailException;
+import com.revende.backend.shared.domain.exception.ValidationException;
 import org.junit.jupiter.api.Test;
 
 class EmailAddressTest {
@@ -20,17 +20,17 @@ class EmailAddressTest {
 
     @Test
     void shouldRejectAddressWithoutDomain() {
-        assertThatThrownBy(() -> new EmailAddress("maria@revende")).isInstanceOf(InvalidEmailException.class);
+        assertThatThrownBy(() -> new EmailAddress("maria@revende")).isInstanceOf(ValidationException.class);
     }
 
     @Test
     void shouldRejectBlankAddress() {
-        assertThatThrownBy(() -> new EmailAddress("   ")).isInstanceOf(InvalidEmailException.class);
+        assertThatThrownBy(() -> new EmailAddress("   ")).isInstanceOf(ValidationException.class);
     }
 
     @Test
     void shouldRejectAddressLongerThanRfcLimit() {
         String tooLong = "a".repeat(320) + "@revende.com";
-        assertThatThrownBy(() -> new EmailAddress(tooLong)).isInstanceOf(InvalidEmailException.class);
+        assertThatThrownBy(() -> new EmailAddress(tooLong)).isInstanceOf(ValidationException.class);
     }
 }

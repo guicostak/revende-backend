@@ -1,6 +1,6 @@
 package com.revende.backend.identity.domain.model;
 
-import com.revende.backend.identity.domain.exception.InvalidAddressException;
+import com.revende.backend.shared.domain.exception.ValidationException;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -21,18 +21,18 @@ public record Address(
 
         state = required(state, "Estado").toUpperCase(Locale.ROOT);
         if (!STATE.matcher(state).matches()) {
-            throw new InvalidAddressException("Estado deve ser a sigla de duas letras");
+            throw new ValidationException("Estado deve ser a sigla de duas letras");
         }
 
         zipCode = required(zipCode, "CEP").replaceAll("\\D", "");
         if (!ZIP_CODE.matcher(zipCode).matches()) {
-            throw new InvalidAddressException("CEP deve ter 8 dígitos");
+            throw new ValidationException("CEP deve ter 8 dígitos");
         }
     }
 
     private static String required(String value, String field) {
         if (value == null || value.isBlank()) {
-            throw new InvalidAddressException(field + " é obrigatório");
+            throw new ValidationException(field + " é obrigatório");
         }
         return value.trim();
     }

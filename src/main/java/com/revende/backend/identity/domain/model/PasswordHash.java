@@ -1,6 +1,6 @@
 package com.revende.backend.identity.domain.model;
 
-import com.revende.backend.identity.domain.exception.InvalidPasswordHashException;
+import com.revende.backend.shared.domain.exception.ValidationException;
 
 /**
  * Hash BCrypt da senha. O domínio nunca vê a senha em claro — a política de força e o
@@ -10,10 +10,10 @@ public record PasswordHash(String value) {
 
     public PasswordHash {
         if (value == null || value.isBlank()) {
-            throw new InvalidPasswordHashException("Hash de senha é obrigatório");
+            throw new ValidationException("Hash de senha é obrigatório");
         }
         if (!value.startsWith("$2")) {
-            throw new InvalidPasswordHashException("Hash de senha não está em formato BCrypt");
+            throw new ValidationException("Hash de senha não está em formato BCrypt");
         }
     }
 

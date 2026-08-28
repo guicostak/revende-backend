@@ -1,6 +1,6 @@
 package com.revende.backend.identity.domain.model;
 
-import com.revende.backend.identity.domain.exception.InvalidPixKeyException;
+import com.revende.backend.shared.domain.exception.ValidationException;
 import java.util.regex.Pattern;
 
 /**
@@ -15,10 +15,10 @@ public record PixKey(PixKeyType type, String value) {
 
     public PixKey {
         if (type == null) {
-            throw new InvalidPixKeyException("Tipo da chave Pix é obrigatório");
+            throw new ValidationException("Tipo da chave Pix é obrigatório");
         }
         if (value == null || value.isBlank()) {
-            throw new InvalidPixKeyException("Chave Pix é obrigatória");
+            throw new ValidationException("Chave Pix é obrigatória");
         }
         value = value.trim();
         switch (type) {
@@ -27,7 +27,7 @@ public record PixKey(PixKeyType type, String value) {
             case PHONE -> new PhoneNumber(value);
             case RANDOM -> {
                 if (!RANDOM_KEY.matcher(value).matches()) {
-                    throw new InvalidPixKeyException("Chave aleatória deve estar em formato UUID");
+                    throw new ValidationException("Chave aleatória deve estar em formato UUID");
                 }
             }
         }

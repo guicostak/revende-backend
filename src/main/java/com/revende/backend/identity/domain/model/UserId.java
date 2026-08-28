@@ -1,13 +1,12 @@
 package com.revende.backend.identity.domain.model;
 
-import com.revende.backend.shared.domain.UuidV7;
 import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Identidade do usuário, gerada no domínio. Isso permite que o agregado nasça completo,
- * em vez de existir num estado sem identidade até o flush do Hibernate — que é a origem
- * do problema clássico de equals/hashCode em entidade JPA.
+ * Identidade do usuário, gerada no domínio. Isso permite que o agregado nasça completo, em
+ * vez de existir sem identidade até o flush do Hibernate — que é a origem do problema
+ * clássico de equals/hashCode em entidade JPA.
  */
 public record UserId(UUID value) {
 
@@ -16,7 +15,7 @@ public record UserId(UUID value) {
     }
 
     public static UserId newId() {
-        return new UserId(UuidV7.generate());
+        return new UserId(UUID.randomUUID());
     }
 
     public static UserId of(String value) {
