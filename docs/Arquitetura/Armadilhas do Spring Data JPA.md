@@ -18,27 +18,32 @@ Aparece tanto por `LAZY` acessado em laço quanto por `EAGER`, que carrega sem n
 Solução: `LAZY` sempre, e consulta de listagem com `JOIN FETCH` ou projeção.
 Verificação honesta: **contar queries em teste**, não ler o código.
 
-## `equals` e `hashCode` em entidade
+## `@Data` do Lombok: o padrão do projeto
 
-O erro clássico é gerar os dois a partir de todos os campos — o que `@Data` do Lombok faz.
+Entidades usam `@Data`, `@Builder`, `@NoArgsConstructor` e `@AllArgsConstructor`. Getters,
+setters, `equals`, `hashCode` e `toString` vêm do Lombok em vez de escritos à mão.
 
-Dois estragos:
+Dois efeitos conhecidos, para ter em mente ao usar:
 
-1. **ID gerado pelo banco é `null` antes do flush.** Se a entidade entra num `HashSet`
-   antes de persistir e ganha ID depois, o hash muda enquanto ela está na coleção, e ela
-   fica inalcançável ali dentro.
-2. **Acessar relação `LAZY` dentro de `equals`** dispara carregamento, ou estoura
-   `LazyInitializationException` fora de transação.
+**`equals` e `hashCode` cobrem todos os campos.** Com ID gerado pelo banco, o valor é `null`
+antes do flush — então entidade que entra num `HashSet` antes de persistir muda de hash
+depois e fica inalcançável naquela coleção. Na prática: não guarde entidade não persistida
+em coleção baseada em hash.
 
-Recomendação da comunidade: **não escreva `equals`/`hashCode` em entidade**, ou escreva à
-mão com cuidado. A igualdade por identidade que a JPA dá por padrão costuma ser a mais segura.
+**`toString` percorre as relações.** Em associação `LAZY` isso dispara carregamento, ou
+estoura `LazyInitializationException` fora de transação. Quando houver relação mapeada,
+exclua do `toString`:
 
-E **não use `@Data` do Lombok em entidade** — ele gera `equals`, `hashCode` e `toString`
-que passam por relações lazy e por ID mutável.
+```java
+@ToString(exclude = "listings")
+```
 
-> No modelo hexagonal isso quase desaparece: o **agregado de domínio** tem igualdade por
-> identidade de negócio e a **entidade JPA** é estrutura burra de persistência. Separar as
-> duas resolve o problema pela raiz, em vez de administrá-lo.
+E campo sensível também sai:
+
+```java
+@ToString.Exclude
+private String passwordHash;
+```
 
 ## `open-in-view`
 
