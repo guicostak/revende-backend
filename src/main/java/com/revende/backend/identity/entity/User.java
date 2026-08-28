@@ -1,5 +1,7 @@
-package com.revende.backend.identity.model;
+package com.revende.backend.identity.entity;
 
+import com.revende.backend.identity.model.AccountStatus;
+import com.revende.backend.identity.model.PixKeyType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
