@@ -25,7 +25,7 @@ jobs:
   #    sem gastar runner nos estágios seguintes.
   # ─────────────────────────────────────────────────────────────
   validacao:
-    name: 1 · Validação
+    name: Validação
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -54,7 +54,7 @@ jobs:
   # 2. Compila e empacota. O .jar vira artefato baixável.
   # ─────────────────────────────────────────────────────────────
   build:
-    name: 2 · Build
+    name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: validacao
@@ -82,7 +82,7 @@ jobs:
   # 3 a 5 rodam EM PARALELO depois do build.
   # ─────────────────────────────────────────────────────────────
   testes:
-    name: 3 · Testes e cobertura
+    name: Testes e cobertura
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: build
@@ -128,7 +128,7 @@ jobs:
           retention-days: 7
 
   analise:
-    name: 4 · Análise estática
+    name: Análise estática
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: build
@@ -155,7 +155,7 @@ jobs:
           retention-days: 7
 
   seguranca:
-    name: 5 · Segurança
+    name: Segurança
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: build
@@ -193,7 +193,7 @@ jobs:
   # 6. Quality gate: consome a cobertura produzida no estágio 3.
   # ─────────────────────────────────────────────────────────────
   qualidade:
-    name: 6 · Quality gate
+    name: Quality gate
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: testes
@@ -230,7 +230,7 @@ jobs:
   # 7. Painel final: roda mesmo com estágio quebrado.
   # ─────────────────────────────────────────────────────────────
   resumo:
-    name: 7 · Resumo
+    name: Resumo
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [validacao, build, testes, analise, seguranca, qualidade]
@@ -248,14 +248,14 @@ jobs:
           {
             echo "## Pipeline · ${{ github.ref_name }}"
             echo ""
-            echo "| # | Estágio | Resultado |"
-            echo "|---|---------|-----------|"
-            echo "| 1 | Validação (formato, workflows) | $(icone '${{ needs.validacao.result }}') |"
-            echo "| 2 | Build e empacotamento | $(icone '${{ needs.build.result }}') |"
-            echo "| 3 | Testes e cobertura | $(icone '${{ needs.testes.result }}') |"
-            echo "| 4 | Análise estática (SpotBugs) | $(icone '${{ needs.analise.result }}') |"
-            echo "| 5 | Segurança (CodeQL, dependências) | $(icone '${{ needs.seguranca.result }}') |"
-            echo "| 6 | Quality gate (SonarCloud) | $(icone '${{ needs.qualidade.result }}') |"
+            echo "| Estágio | Resultado |"
+            echo "|---------|-----------|"
+            echo "| Validação (formato, workflows) | $(icone '${{ needs.validacao.result }}') |"
+            echo "| Build e empacotamento | $(icone '${{ needs.build.result }}') |"
+            echo "| Testes e cobertura | $(icone '${{ needs.testes.result }}') |"
+            echo "| Análise estática (SpotBugs) | $(icone '${{ needs.analise.result }}') |"
+            echo "| Segurança (CodeQL, dependências) | $(icone '${{ needs.seguranca.result }}') |"
+            echo "| Quality gate (SonarCloud) | $(icone '${{ needs.qualidade.result }}') |"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Reprovar se algum estágio falhou
@@ -269,7 +269,7 @@ jobs:
   #    passarem. Autentica por OIDC: nenhum segredo do GCP no GitHub.
   # ─────────────────────────────────────────────────────────────
   deploy:
-    name: 8 · Deploy
+    name: Deploy
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: resumo
