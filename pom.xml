@@ -19,14 +19,14 @@
     <java.version>21</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-    <jacoco.version>0.8.12</jacoco.version>
-    <spotless.version>2.44.0</spotless.version>
+    <jacoco.version>0.8.15</jacoco.version>
+    <spotless.version>3.10.0</spotless.version>
     <palantir.version>2.50.0</palantir.version>
-    <spotbugs.version>4.8.6.6</spotbugs.version>
+    <spotbugs.version>4.10.4.0</spotbugs.version>
     <!-- 1.19.8 do Spring Boot negocia API Docker 1.32; Docker 29 exige >= 1.40 -->
     <testcontainers.version>1.21.3</testcontainers.version>
 
-    <sonar.scanner.version>5.0.0.4389</sonar.scanner.version>
+    <sonar.scanner.version>5.7.0.6970</sonar.scanner.version>
 
     <!-- SonarCloud: confirmar organization/projectKey ao criar o projeto -->
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
