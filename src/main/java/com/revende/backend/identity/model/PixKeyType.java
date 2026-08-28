@@ -1,4 +1,4 @@
-package com.revende.backend.identity.domain.model;
+package com.revende.backend.identity.model;
 
 public enum PixKeyType {
     CPF,
