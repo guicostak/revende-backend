@@ -1,6 +1,6 @@
 package com.revende.backend.identity.domain.model;
 
-import com.revende.backend.identity.domain.exception.InvalidPersonNameException;
+import com.revende.backend.shared.domain.exception.ValidationException;
 
 /** Nome de exibição. Não pretende ser nome civil: é o que os outros usuários veem. */
 public record PersonName(String value) {
@@ -10,12 +10,11 @@ public record PersonName(String value) {
 
     public PersonName {
         if (value == null || value.isBlank()) {
-            throw new InvalidPersonNameException("Nome é obrigatório");
+            throw new ValidationException("Nome é obrigatório");
         }
         value = value.trim().replaceAll("\\s{2,}", " ");
         if (value.length() < MIN_LENGTH || value.length() > MAX_LENGTH) {
-            throw new InvalidPersonNameException(
-                    "Nome deve ter entre " + MIN_LENGTH + " e " + MAX_LENGTH + " caracteres");
+            throw new ValidationException("Nome deve ter entre " + MIN_LENGTH + " e " + MAX_LENGTH + " caracteres");
         }
     }
 

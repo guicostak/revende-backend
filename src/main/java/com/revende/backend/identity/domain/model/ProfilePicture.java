@@ -1,6 +1,6 @@
 package com.revende.backend.identity.domain.model;
 
-import com.revende.backend.identity.domain.exception.InvalidProfilePictureException;
+import com.revende.backend.shared.domain.exception.ValidationException;
 
 /**
  * Endereço da foto de perfil. Exige https porque imagem em http dentro de página https
@@ -12,14 +12,14 @@ public record ProfilePicture(String value) {
 
     public ProfilePicture {
         if (value == null || value.isBlank()) {
-            throw new InvalidProfilePictureException("Endereço da foto é obrigatório");
+            throw new ValidationException("Endereço da foto é obrigatório");
         }
         value = value.trim();
         if (value.length() > MAX_LENGTH) {
-            throw new InvalidProfilePictureException("Endereço excede " + MAX_LENGTH + " caracteres");
+            throw new ValidationException("Endereço excede " + MAX_LENGTH + " caracteres");
         }
         if (!value.startsWith("https://")) {
-            throw new InvalidProfilePictureException("Endereço da foto deve usar https");
+            throw new ValidationException("Endereço da foto deve usar https");
         }
     }
 
