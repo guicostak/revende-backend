@@ -188,7 +188,68 @@ Cada bug corrigido ganha um teste que falha antes do fix.
 
 ---
 
-## 3. Checklist antes de encerrar uma task
+## 3. Modelagem de dados e desenho de entidades
+
+> O domínio foi zerado para ser remodelado. Esta seção é a régua dessa remodelagem.
+
+### 3.1 Comece pelo agregado, não pela tabela
+
+A pergunta não é "quais tabelas preciso", é **"o que precisa mudar junto, numa transação, para o dado nunca ficar inconsistente?"**. Esse conjunto é um agregado, e ele tem uma raiz — a única classe que o mundo de fora enxerga.
+
+Quatro regras que definem a fronteira:
+
+1. **Uma transação altera um agregado.** Se uma operação precisa gravar dois agregados atomicamente, ou a fronteira está errada, ou falta um evento entre eles.
+2. **Agregados se referenciam por ID, nunca por objeto.** `TicketListing` guarda `SellerId`, não `User`. Isso impede o grafo inteiro de ser carregado por acidente e mantém os contextos desacoplados.
+3. **Invariante mora dentro da raiz.** Se uma regra precisa olhar dois agregados para decidir, ela não é invariante — é caso de uso.
+4. **Menor é melhor.** Agregado grande vira ponto de contenção sob concorrência e carrega dado que ninguém pediu.
+
+### 3.2 Do agregado para o schema
+
+| Decisão | Regra |
+|---|---|
+| Chave primária | `BIGSERIAL` (ou UUID v7 se o ID vazar para URL pública). Nunca chave natural composta |
+| Nome de tabela | plural, snake_case: `ticket_listings` |
+| Dinheiro | `NUMERIC(19,2)`. **Nunca** `float`/`double`. E guarde a moeda se um dia houver mais de uma |
+| Data com fuso | `TIMESTAMPTZ` para instante (criação, pagamento). `TIMESTAMP` só para data-hora local de calendário |
+| Enum | `VARCHAR` + `CHECK`, não o tipo `ENUM` do Postgres — renomear valor de enum nativo exige migração dolorosa |
+| Booleano opcional | evite `NULL` em booleano: três estados onde a regra prevê dois |
+| Texto | `VARCHAR(n)` com `n` justificado, ou `TEXT`. Não invente 255 por hábito |
+
+### 3.3 Constraint é regra de negócio, não enfeite
+
+O banco é a última linha de defesa e a única que sobrevive a bug de aplicação. Cada invariante que **puder** virar constraint, deve:
+
+- `NOT NULL` em tudo que é obrigatório
+- `UNIQUE` em identidade de negócio (e-mail)
+- `FOREIGN KEY` em toda referência, com `ON DELETE` explícito e pensado
+- `CHECK` para faixa válida: `price > 0`, `quantity >= 1`
+
+Validação no Java **não substitui** constraint no banco: corrida entre duas requisições passa pela validação e só a constraint segura.
+
+### 3.4 Índices
+
+Índice existe para três coisas: chave estrangeira, coluna de filtro frequente e coluna de ordenação. Fora disso, custa escrita e espaço sem devolver nada.
+
+Regra prática: **toda coluna que aparece em `WHERE` de consulta da vitrine precisa de índice**, e filtro combinado pede índice composto na ordem em que é filtrado.
+
+### 3.5 Migrações
+
+- Uma migração por mudança, **imutável depois de aplicada**. Corrigir migração já aplicada gera divergência entre ambientes
+- `V{n}__descricao_no_imperativo.sql`
+- Toda migração precisa ser segura em produção com a versão anterior da aplicação rodando: adicionar coluna nullable, preencher, depois tornar obrigatória. Três passos, não um
+- `ddl-auto` fica em `validate`. O Hibernate confere, nunca decide
+- **Nunca** `DROP COLUMN` no mesmo release que para de usá-la. Deixe uma versão de distância para conseguir voltar atrás
+
+### 3.6 Performance é modelagem, não otimização
+
+- `@ManyToOne` é **sempre** `LAZY`. O default `EAGER` do `@ManyToOne` é a maior fonte de N+1 em Spring Data
+- Consulta de listagem usa `JOIN FETCH` ou projeção, nunca navegação de objeto
+- Toda listagem é paginada, com ordenação explícita e determinística
+- Suspeita de N+1 se resolve contando queries em teste, não olhando o código
+
+---
+
+## 4. Checklist antes de encerrar uma task
 
 - [ ] `mvn -q verify` passa (compila + testes + ArchUnit).
 - [ ] Nenhum import de framework entrou em `domain/`.
@@ -201,26 +262,38 @@ Cada bug corrigido ganha um teste que falha antes do fix.
 
 ---
 
-## 4. Dívidas conhecidas (estado atual)
+## 5. Estado atual e lições da versão anterior
 
-Levantadas na análise do código atual — trate quando a task encostar nelas, e **não replique o padrão**:
+**O domínio foi zerado em 2026-08-27** para ser remodelado em hexagonal. De pé hoje:
+ponto de entrada Spring Boot, teste de subida contra Postgres real, pipeline de 7
+estágios, Docker, Flyway e configuração por ambiente. Zero código de negócio.
 
-1. **Zero testes.** `src/test/java` está vazio.
-2. Segredo JWT tem **default de dev embutido** no `application.yml`; produção depende de
-   `REVENDE_JWT_SECRET` estar setado — não há validação de que foi trocado no boot.
-3. `ddl-auto: update` e sem Flyway — schema não versionado.
-4. Ownership de anúncio lança `IllegalArgumentException` → responde **400 em vez de 403**
-   (`ListingService.ensureOwner`).
-5. `JwtAuthFilter` tem `catch (Exception ignored)` — falha de token some sem trace.
-6. `TicketListing` usa `FetchType.EAGER` em `event` e `seller` → N+1 nas listagens.
-7. Nenhum `@Transactional` nos services.
-8. `GET /api/events` e `/api/listings` sem paginação.
-9. `POST /api/events` exige apenas JWT — **qualquer usuário cria evento**, sem papel/role.
-10. Entidades JPA anêmicas com setters públicos e sem invariantes.
+O código anterior está no histórico, em `c300a61`. Ele funcionava, e mesmo assim
+carregava os defeitos abaixo. **Não repita nenhum** — cada um custou uma nota em
+`docs/` explicando o estrago.
 
----
+| Defeito da v1 | Como evitar agora |
+|---|---|
+| Transição de status não validada: dava para cancelar anúncio já vendido e apagar o registro da venda | Transição é método do agregado, com estado terminal recusando com **409** |
+| Falta de posse respondia **400** | Exceção de domínio própria → **403** |
+| `AuthenticationException` sem handler: senha errada devolvia **500** | Handler dedicado → **401**, mensagem genérica |
+| Rota `/me` casava com padrão público: sem token dava NPE → **500** | Regra de autorização explícita por rota, nunca por coringa |
+| Entidades anêmicas com setter público | Agregado sem setter; mudança de estado só por método com nome de negócio |
+| `EAGER` em `@ManyToOne` | Sempre `LAZY` |
+| Sem paginação | Toda listagem paginada desde a primeira versão |
+| Busca ignorava um filtro em silêncio | Critério combinado explícito, ou recusa clara |
+| Zero testes | Regra de domínio nasce com teste unitário |
 
-## 5. Comandos
+Pendências de infraestrutura que atravessaram a remodelagem:
+
+1. `V1__baseline.sql` descreve o **modelo antigo**. Ao definir as entidades novas, ela
+   precisa ser reescrita, senão `ddl-auto: validate` acusa divergência.
+2. Spring Security está no classpath **sem configuração**: hoje toda rota fica sob HTTP
+   Basic com senha aleatória, inclusive `/actuator/health` — o que quebra as sondas.
+3. O quality gate do Sonar mede código novo; com o domínio zerado, a régua de cobertura
+   vai apertar de verdade a partir da primeira classe escrita.
+
+## 6. Comandos
 
 ```bash
 mvn spring-boot:run     # sobe em http://localhost:8080
