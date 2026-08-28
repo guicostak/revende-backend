@@ -34,12 +34,16 @@ Abra a **raiz do projeto** como vault (a config já está em `.obsidian/`).
 
 ---
 
-## 1. Arquitetura Hexagonal (Ports & Adapters)
+## 1. Arquitetura (Ports & Adapters, pragmática)
 
 ### 1.1 A regra única
 
-**A dependência sempre aponta para dentro.** O domínio não conhece ninguém; a aplicação
-conhece o domínio; os adapters conhecem a aplicação. Nunca o contrário.
+**A dependência sempre aponta para dentro.** O domínio não conhece a web, não conhece o
+adapter, não conhece o mundo de fora. A aplicação orquestra; os adapters implementam.
+
+O que **não** herdamos do hexagonal ortodoxo: a exigência de domínio livre de framework e a
+duplicação entre entidade de domínio e entidade JPA. Ambas custam mais do que devolvem
+nesta escala.
 
 ```
         HTTP / CLI / Scheduler                   JPA / SMTP / HTTP client
@@ -54,102 +58,88 @@ conhece o domínio; os adapters conhecem a aplicação. Nunca o contrário.
         └────────────────────────────┬─────────────────────────────────┘
                                      │ usa
                         ┌────────────▼────────────┐
-                        │         domain          │
-                        │  entidades · VOs · regras│
-                        │   ZERO framework         │
+                        │      entity · model     │
                         └─────────────────────────┘
 ```
 
-### 1.2 Estrutura de pacotes alvo
+### 1.2 Estrutura de pacotes
 
 ```
 com.revende.backend
-├── shared/                          # kernel comum, sem regra de negócio
-│   ├── domain/                      # Money, EmailAddress, exceções base
-│   └── config/                      # SecurityConfig, CorsConfig, beans Spring
-│
-├── identity/                        # contexto: usuário & autenticação
-├── catalog/                         # contexto: eventos
-└── marketplace/                     # contexto: anúncios de ingresso
-     │
-     ├── domain/
-     │   ├── model/                  # TicketListing, ListingStatus, Money — POJOs puros
-     │   └── exception/              # ListingNotFoundException, NotListingOwnerException
-     │
+├── shared/                          # kernel comum
+└── <contexto>/                      # identity · catalog · marketplace · payments
+     ├── entity/                     # classes @Entity — o que vira tabela
+     ├── model/                      # enums e tipos de apoio que não viram tabela
      ├── application/
-     │   ├── port/in/                # PublishListingUseCase, MarkListingSoldUseCase (interfaces)
-     │   ├── port/out/               # LoadListingPort, SaveListingPort (interfaces)
-     │   └── service/                # PublishListingService implements PublishListingUseCase
-     │
+     │   ├── port/in/                # interfaces de caso de uso
+     │   ├── port/out/               # interfaces do que o domínio precisa de fora
+     │   └── service/                # implementa port/in, usa port/out
      └── adapter/
-         ├── in/web/                 # ListingController + DTOs + WebMapper
-         └── out/persistence/        # TicketListingJpaEntity, SpringDataRepo, PersistenceAdapter
+         ├── in/web/                 # controller + DTOs
+         └── out/persistence/        # Spring Data, implementa port/out
 ```
+
+**`entity/` e `model/`:** uma classe por conceito, sem mapper entre domínio e persistência.
+A entidade JPA *é* a entidade de domínio. O que separa os dois pacotes é ser tabela ou não.
 
 ### 1.3 O que pode existir em cada camada
 
-| Camada | Pode | **Não pode**, nunca |
+| Camada | Pode | **Não pode** |
 |---|---|---|
-| `domain/` | Entidades JPA com Lombok (`@Data`, `@Builder`), enums, regras simples | Regra de negócio complexa espalhada, acesso a HTTP |
-| `application/` | `@Service`, `@Transactional`, ports, orquestração | Tipos HTTP (`ResponseEntity`, `Authentication`), entidades JPA, SQL |
-| `adapter/in/web` | `@RestController`, DTOs, validação Bean, mapeamento HTTP↔domínio | Regra de negócio, acesso a repositório |
-| `adapter/out/persistence` | `@Entity` JPA, Spring Data, mapeamento domínio↔tabela | Regra de negócio, decisão de fluxo |
+| `entity/`, `model/` | `@Entity`, Lombok, enums, regras da própria entidade | Tipos HTTP, chamada a repositório, conhecer adapter |
+| `application/` | `@Service`, `@Transactional`, ports, orquestração | `ResponseEntity`, `Authentication`, SQL |
+| `adapter/in/web` | `@RestController`, DTOs, `@Valid`, mapeamento HTTP | Regra de negócio, acesso direto a repositório |
+| `adapter/out/persistence` | Spring Data, consultas | Regra de negócio, decisão de fluxo |
 
 ### 1.4 Regras não-negociáveis
 
-1. **Entidade de domínio ≠ entidade JPA.** São duas classes diferentes, ligadas por um mapper
-   no adapter de persistência. `TicketListing` (domínio) vs `TicketListingJpaEntity` (adapter).
-2. **Toda saída do domínio passa por um port** (`interface` em `application/port/out`),
-   implementado no adapter. O `application` nunca importa `JpaRepository`.
-3. **Todo caso de uso é um port de entrada** (`application/port/in`) com um método público.
-   O controller depende da interface, nunca da classe concreta.
-4. **DTO de web nunca entra no domínio e entidade de domínio nunca sai pela web.**
-   O mapeamento acontece na borda.
-5. **Regra de negócio mora no domínio**, não no service. Ex.: "só o dono cancela o anúncio"
-   é `listing.cancelBy(sellerId)` — não um `if` no service.
-6. **Identidade do usuário chega como tipo próprio** (`SellerId` / `UserId`), não como
-   `String email` vindo de `Authentication.getName()`.
-7. Um contexto (`marketplace`) só fala com outro (`catalog`) através de um **port de saída**,
-   nunca importando o service do outro.
+1. **Todo caso de uso é um port de entrada** (`application/port/in`). O controller depende
+   da interface, nunca da classe concreta.
+2. **Toda saída passa por um port** (`application/port/out`), implementado no adapter.
+   O `application` não importa `JpaRepository`.
+3. **DTO de web não entra na aplicação e entidade não sai pela web.** O mapeamento acontece
+   na borda.
+4. **Identidade do usuário chega como tipo próprio**, não como `String email` vindo de
+   `Authentication.getName()`.
+5. Um contexto só fala com outro através de um **port de saída**, nunca importando o
+   service do outro.
+6. **Validação de formato fica na borda**, com Bean Validation nos DTOs. A entidade não
+   valida a si mesma.
 
 ### 1.5 Ordem de construção
 
-O domínio está zerado. Construa **de dentro para fora**, um contexto por vez —
-começando por `marketplace`, que é o mais rico em regra e serve de referência.
+Um contexto por vez. Comece por `identity`, que é o que destrava todo o resto.
 
 | # | Passo | Só avance quando |
 |---|---|---|
-| 1 | Agregado de domínio puro, com invariantes | Teste unitário cobre caso feliz, borda e proibido — sem Spring, em milissegundos |
-| 2 | Ports de saída (interfaces) | O caso de uso compila sem saber que existe banco |
-| 3 | Um service por caso de uso, implementando o port de entrada | Teste com mock dos ports cobre orquestração e erro |
-| 4 | Entidade JPA + mapper + adapter de persistência | Teste de mapeamento ida e volta passa |
-| 5 | Migração Flyway do schema novo | `ddl-auto: validate` aceita, migração aplica do zero |
-| 6 | Controller, DTOs e mapeamento HTTP | Teste de API cobre os status de cada caminho de erro |
-
-**A ordem importa.** Escrever a entidade JPA primeiro é o caminho mais curto para o
-modelo anêmico da v1: o schema passa a ditar o domínio, em vez do contrário.
-
-**Sinal de que deu certo:** abrir `marketplace/domain/` e ler as regras de negócio
-inteiras, sem um `import` de framework.
+| 1 | Entidade `@Entity` + enums | Migração Flyway aplica e `ddl-auto: validate` aceita |
+| 2 | Repositório Spring Data + port de saída | O caso de uso compila sem saber qual banco existe |
+| 3 | Port de entrada + service por caso de uso | Teste com mock dos ports cobre orquestração e erro |
+| 4 | Controller, DTOs e validação | Teste de API cobre o status de cada caminho de erro |
 
 ### 1.6 Como proteger a arquitetura
 
-Adicionar ArchUnit (`com.tngtech.archunit:archunit-junit5`, escopo `test`) com testes que
-falham o build se: `domain` importar `org.springframework` ou `jakarta.persistence`;
-`application` importar `adapter`; qualquer ciclo entre pacotes. **Esse teste é o guardião —
-não desabilite para "passar" uma task.**
+ArchUnit (`com.tngtech.archunit:archunit-junit5`, escopo `test`) com testes que falham o
+build se:
 
----
+- `entity`/`model` importarem `org.springframework.web` ou tipos HTTP
+- `application` importar `adapter` ou `JpaRepository`
+- houver ciclo entre pacotes
+
+Repare no que **não** está na lista: `jakarta.persistence` na entidade é esperado, porque a
+entidade JPA é a entidade de domínio. A regra protege a **direção da dependência**, não a
+pureza de framework.
+
+**Esse teste é o guardião — não desabilite para "passar" uma task.**
 
 ## 2. Padrões de código
 
 ### 2.1 Geral
 
-- Java 21: use `record` para DTOs e VOs, `sealed` para hierarquias fechadas, pattern matching.
+- Java 21: use `record` para DTOs, `sealed` para hierarquias fechadas, pattern matching.
 - **Injeção por construtor**, sempre. Nunca `@Autowired` em campo.
 - Entidades usam **Lombok**: `@Data`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor`.
   Exclua relações e campos sensíveis do `toString` — ver `docs/Arquitetura/Armadilhas do Spring Data JPA`.
-- Campos `final` por padrão. Objetos de domínio imutáveis sempre que possível.
 - Nada de `null` em API pública: use `Optional` no retorno de busca, ou lance exceção.
 - `BigDecimal` para dinheiro — nunca `double`/`float`. Comparar com `compareTo`, não `equals`.
 - Um tipo público por arquivo. Nada de classes-container tipo `ListingDtos` com records dentro.
@@ -212,7 +202,8 @@ Quatro regras que definem a fronteira:
 
 1. **Uma transação altera um agregado.** Se uma operação precisa gravar dois agregados atomicamente, ou a fronteira está errada, ou falta um evento entre eles.
 2. **Agregados se referenciam por ID, nunca por objeto.** `TicketListing` guarda `SellerId`, não `User`. Isso impede o grafo inteiro de ser carregado por acidente e mantém os contextos desacoplados.
-3. **Invariante mora dentro da raiz.** Se uma regra precisa olhar dois agregados para decidir, ela não é invariante — é caso de uso.
+3. **Regra que olha dois agregados é caso de uso**, não invariante de entidade. Validação de
+   formato fica na borda; consistência entre entidades fica no service.
 4. **Menor é melhor.** Agregado grande vira ponto de contenção sob concorrência e carrega dado que ninguém pediu.
 
 ### 3.2 Do agregado para o schema
