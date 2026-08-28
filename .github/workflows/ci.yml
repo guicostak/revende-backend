@@ -262,3 +262,77 @@ jobs:
         run: |
           echo "Pelo menos um estágio falhou. Veja o painel acima."
           exit 1
+
+  # ─────────────────────────────────────────────────────────────
+  # 8. Deploy. Só em push no main, e só depois de TODOS os estágios
+  #    passarem. Autentica por OIDC: nenhum segredo do GCP no GitHub.
+  # ─────────────────────────────────────────────────────────────
+  deploy:
+    name: 8 · Deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: resumo
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+    environment: production
+
+    permissions:
+      contents: read
+      # Necessário para o GitHub emitir o token OIDC que o Google valida.
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # Troca o token OIDC do GitHub por credencial temporária do Google.
+      # Não existe chave de service account em lugar nenhum.
+      - name: Autenticar no Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Configurar gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Autenticar no Artifact Registry
+        run: gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Construir e publicar imagem
+        env:
+          IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/revende/${{ vars.CLOUD_RUN_SERVICE }}
+        run: |
+          docker build -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:latest" .
+          docker push "$IMAGE:${{ github.sha }}"
+          docker push "$IMAGE:latest"
+
+      # Os segredos vêm do Secret Manager direto para o container.
+      # Nunca passam pelo GitHub, nunca aparecem em log, não entram na imagem.
+      - name: Publicar no Cloud Run
+        id: run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ vars.CLOUD_RUN_SERVICE }}
+          region: ${{ vars.GCP_REGION }}
+          image: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/revende/${{ vars.CLOUD_RUN_SERVICE }}:${{ github.sha }}
+          flags: >-
+            --allow-unauthenticated
+            --min-instances=0
+            --max-instances=3
+            --cpu=1
+            --memory=1Gi
+            --port=8080
+            --set-secrets=DB_URL=revende-db-url:latest,DB_USER=revende-db-user:latest,DB_PASSWORD=revende-db-password:latest,REVENDE_JWT_SECRET=revende-jwt-secret:latest
+            --set-env-vars=CORS_ALLOWED_ORIGINS=http://localhost:3000
+
+      - name: Registrar URL
+        run: |
+          {
+            echo "### 🚀 Deploy concluído"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| URL | ${{ steps.run.outputs.url }} |"
+            echo "| Imagem | \`${{ github.sha }}\` |"
+            echo "| Região | ${{ vars.GCP_REGION }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
