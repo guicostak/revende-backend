@@ -13,5 +13,4 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * transforma qualquer site em cliente autenticado da conta de quem estiver logado.
  */
 @ConfigurationProperties(prefix = "revende.cors")
-public record CorsProperties(List<String> allowedOrigins) {
-}
+public record CorsProperties(List<String> allowedOrigins) {}

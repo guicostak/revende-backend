@@ -51,18 +51,19 @@ public class SecurityConfig {
                 // login nativa em cima de uma chamada de API.
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(PROBE_ROUTES).permitAll()
-                        .requestMatchers(AUTH_ROUTES).permitAll()
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth.requestMatchers(PROBE_ROUTES)
+                        .permitAll()
+                        .requestMatchers(AUTH_ROUTES)
+                        .permitAll()
                         // Nega por padrão: rota nova nasce protegida, e liberar é um ato
                         // deliberado acima desta linha.
-                        .anyRequest().authenticated())
+                        .anyRequest()
+                        .authenticated())
                 // Sem mecanismo de autenticação configurado, o default responderia 403.
                 // Para um cliente de API, 401 é a informação correta: falta credencial.
-                .exceptionHandling(handling -> handling
-                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+                .exceptionHandling(handling ->
+                        handling.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .build();
     }
 
@@ -70,8 +71,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource(CorsProperties properties) {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(properties.allowedOrigins());
-        configuration.setAllowedMethods(
-                List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         // O token viaja no header `Authorization`, não em cookie. Ligar credentials aqui
         // só ampliaria a superfície sem que nada no fluxo precise disso.
