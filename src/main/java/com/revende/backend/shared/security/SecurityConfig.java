@@ -43,8 +43,16 @@ public class SecurityConfig {
                 // Injetar por tipo seria ambíguo: o `mvcHandlerMappingIntrospector` do
                 // Spring MVC também implementa CorsConfigurationSource.
                 .cors(Customizer.withDefaults())
-                // API sem sessão e sem cookie: não há o que um site terceiro reenviar,
-                // então CSRF protegeria contra um ataque que este desenho não permite.
+                // API sem sessão e sem cookie: o token vai no header `Authorization`, que
+                // o navegador não anexa sozinho em requisição de outro site. Sem credencial
+                // ambiente não há o que forjar, então CSRF protegeria contra um ataque que
+                // este desenho não permite — e exigiria um token de CSRF que o cliente não
+                // teria como obter sem sessão.
+                //
+                // ATENÇÃO: isto vale ENQUANTO a autenticação não usar cookie. No dia em que
+                // o login emitir cookie de sessão ou de refresh, esta linha deixa de ser
+                // segura e a proteção precisa voltar. O CodeQL sinaliza esta linha
+                // (java/spring-disabled-csrf-protection) exatamente por isso.
                 .csrf(AbstractHttpConfigurer::disable)
                 // Desliga os dois mecanismos que a autoconfiguração ligaria sozinha.
                 // O `WWW-Authenticate: Basic` do Basic faz o navegador abrir caixa de
