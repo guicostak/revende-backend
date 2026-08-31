@@ -35,16 +35,14 @@ class SecurityConfigTest {
     void shouldNotRequireAuthenticationOnAuthRoutes() throws Exception {
         // Ainda não há controller de autenticação: 404 prova que a rota passou pela
         // cadeia de segurança em vez de ser barrada por ela.
-        mockMvc.perform(get("/api/auth/login"))
-                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/auth/login")).andExpect(status().isNotFound());
     }
 
     @Test
     void shouldNotRequireAuthenticationOnHealthProbe() throws Exception {
         // O actuator não entra no slice do @WebMvcTest, então não há handler para a rota.
         // 404 em vez de 401 é o que se quer provar: a cadeia liberou a sonda.
-        mockMvc.perform(get("/actuator/health"))
-                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/actuator/health")).andExpect(status().isNotFound());
     }
 
     @Test
