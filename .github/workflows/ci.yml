@@ -260,15 +260,17 @@ jobs:
           exit 1
 
   # ─────────────────────────────────────────────────────────────
-  # 8. Deploy. Só em push no main, e só depois de TODOS os estágios
-  #    passarem. Autentica por OIDC: nenhum segredo do GCP no GitHub.
+  # 8. Imagem: constrói e publica o artefato de container.
+  #    Este estágio deliberadamente NÃO sabe onde a imagem vai rodar.
+  #    É o que permite trocar o destino de execução — Cloud Run hoje,
+  #    Kubernetes depois — sem tocar em como a imagem é construída.
   # ─────────────────────────────────────────────────────────────
-  deploy:
-    name: Deploy
+  imagem:
+    name: Imagem
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     needs: resumo
-    # Deploy sob demanda: só sai quando a mensagem do commit pede, ou por disparo manual.
+    # Sob demanda: só sai quando a mensagem do commit pede, ou por disparo manual.
     # Evita publicar a cada merge sem que ninguém tenha decidido publicar.
     if: >-
       github.ref == 'refs/heads/main' && (
@@ -282,13 +284,22 @@ jobs:
       # Necessário para o GitHub emitir o token OIDC que o Google valida.
       id-token: write
 
+    outputs:
+      referencia: ${{ steps.referencia.outputs.referencia }}
+
+    env:
+      # Registry e nome da imagem ficam separados do destino de execução: migrar para
+      # ECR é cadastrar `IMAGE_REGISTRY`, não reescrever o job. Os defaults mantêm o
+      # Artifact Registry atual funcionando sem cadastrar nada.
+      REGISTRY: ${{ vars.IMAGE_REGISTRY || format('{0}-docker.pkg.dev/{1}/revende', vars.GCP_REGION, vars.GCP_PROJECT_ID) }}
+      IMAGE_NAME: ${{ vars.IMAGE_NAME || 'revende-backend' }}
+
     steps:
       - uses: actions/checkout@v7
 
       # Troca o token OIDC do GitHub por credencial temporária do Google.
       # Não existe chave de service account em lugar nenhum.
       - name: Autenticar no Google Cloud
-        id: auth
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
@@ -297,16 +308,77 @@ jobs:
       - name: Configurar gcloud
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Autenticar no Artifact Registry
+      - name: Autenticar no registry
         run: gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev --quiet
 
-      - name: Construir e publicar imagem
-        env:
-          IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/revende/${{ vars.CLOUD_RUN_SERVICE }}
+      # QEMU emula a arquitetura alvo. Aqui ele carrega pouco: o Dockerfile prende a
+      # compilação ao `$BUILDPLATFORM`, então só o `adduser` do estágio de runtime roda
+      # emulado — não o Maven inteiro.
+      - name: QEMU para arquitetura cruzada
+        uses: docker/setup-qemu-action@v3
+
+      - name: Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # arm64 entra agora porque descobrir a falta dele no dia da migração é caro:
+      # nó Graviton (EKS) e Apple Silicon (máquina de dev) são arm64.
+      - name: Construir e publicar
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # A referência sai como output do job para que o estágio 9 consuma a imagem
+      # exata que foi publicada, em vez de remontar a string por conta própria.
+      - name: Publicar referência da imagem
+        id: referencia
+        run: echo "referencia=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+  # ─────────────────────────────────────────────────────────────
+  # 9. Deploy: leva a imagem do estágio 8 para o destino de execução.
+  #    Tudo que é específico de Cloud Run mora aqui e só aqui — trocar
+  #    por um `kubectl apply` é substituir este job, nada além dele.
+  # ─────────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: imagem
+    environment: production
+
+    permissions:
+      contents: read
+      id-token: write
+
+    env:
+      # Vem do estágio 8, não é remontada aqui: o que se publica é exatamente o que
+      # foi construído, e a regra de nomeação da imagem vive num lugar só.
+      IMAGEM: ${{ needs.imagem.outputs.referencia }}
+
+    steps:
+      # `--set-env-vars` substitui o valor no serviço. Com a variável vazia, o deploy
+      # gravaria `CORS_ALLOWED_ORIGINS=` — e o Spring usaria a string vazia em vez do
+      # default do application.yml, derrubando o CORS sem erro visível.
+      - name: A origem do frontend está cadastrada?
         run: |
-          docker build -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:latest" .
-          docker push "$IMAGE:${{ github.sha }}"
-          docker push "$IMAGE:latest"
+          if [ -z "${{ vars.CORS_ALLOWED_ORIGINS }}" ]; then
+            echo "::error::Cadastre a variável CORS_ALLOWED_ORIGINS no repositório"
+            echo "(Settings → Secrets and variables → Actions → Variables)."
+            echo "Sem ela o deploy apagaria a origem do frontend em produção."
+            exit 1
+          fi
+
+      - name: Autenticar no Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
 
       # Os segredos vêm do Secret Manager direto para o container.
       # Nunca passam pelo GitHub, nunca aparecem em log, não entram na imagem.
@@ -316,7 +388,7 @@ jobs:
         with:
           service: ${{ vars.CLOUD_RUN_SERVICE }}
           region: ${{ vars.GCP_REGION }}
-          image: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/revende/${{ vars.CLOUD_RUN_SERVICE }}:${{ github.sha }}
+          image: ${{ env.IMAGEM }}
           flags: >-
             --allow-unauthenticated
             --service-account=revende-runtime@citric-proxy-506900-k8.iam.gserviceaccount.com
@@ -326,7 +398,7 @@ jobs:
             --memory=1Gi
             --port=8080
             --set-secrets=DB_URL=revende-db-url:latest,DB_USER=revende-db-user:latest,DB_PASSWORD=revende-db-password:latest,REVENDE_JWT_SECRET=revende-jwt-secret:latest
-            --set-env-vars=CORS_ALLOWED_ORIGINS=http://localhost:3000
+            --set-env-vars=CORS_ALLOWED_ORIGINS=${{ vars.CORS_ALLOWED_ORIGINS }}
 
       - name: Registrar URL
         run: |
@@ -336,6 +408,7 @@ jobs:
             echo "| | |"
             echo "|---|---|"
             echo "| URL | ${{ steps.run.outputs.url }} |"
-            echo "| Imagem | \`${{ github.sha }}\` |"
-            echo "| Região | ${{ vars.GCP_REGION }} |"
+            echo "| Imagem | \`${{ env.IMAGEM }}\` |"
+            echo "| Arquiteturas | \`linux/amd64\`, \`linux/arm64\` |"
+            echo "| Origem do frontend | ${{ vars.CORS_ALLOWED_ORIGINS }} |"
           } >> "$GITHUB_STEP_SUMMARY"
