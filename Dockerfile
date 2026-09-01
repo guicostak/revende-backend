@@ -1,5 +1,10 @@
 # ---------- build ----------
-FROM maven:3.9-eclipse-temurin-21 AS build
+# `--platform=$BUILDPLATFORM` prende a compilação à arquitetura do runner, e é o que
+# torna o build multi-arquitetura viável: bytecode Java independe de arquitetura, então
+# o JAR é compilado UMA vez, nativo. Sem isso o buildx rodaria o Maven inteiro dentro de
+# emulação QEMU para cada plataforma alvo, e minutos virariam dezenas de minutos.
+# Só o estágio de runtime abaixo é resolvido por arquitetura.
+FROM --platform=$BUILDPLATFORM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /build
 
 # Camada de dependências separada: mudar código não refaz o download.
