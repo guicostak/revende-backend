@@ -14,7 +14,7 @@ ALTER TABLE users
 ALTER TABLE users
     ADD COLUMN status          VARCHAR(30)  NOT NULL DEFAULT 'ACTIVE',
     ADD COLUMN email_verified  BOOLEAN      NOT NULL DEFAULT FALSE,
-    ADD COLUMN profile_picture VARCHAR(500),
+    ADD COLUMN profile_picture_url VARCHAR(500),
     ADD COLUMN cpf             VARCHAR(11),
     ADD COLUMN pix_key         VARCHAR(140),
     ADD COLUMN pix_key_type    VARCHAR(10),
