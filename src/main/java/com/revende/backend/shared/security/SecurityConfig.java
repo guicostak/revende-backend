@@ -11,6 +11,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.web.cors.CorsConfiguration;
@@ -27,7 +29,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  */
 @Configuration
 @EnableWebSecurity
-@EnableConfigurationProperties(CorsProperties.class)
+@EnableConfigurationProperties({CorsProperties.class, JwtProperties.class})
 public class SecurityConfig {
 
     /** Rotas de autenticação. Únicas públicas: é por elas que se obtém o token. */
@@ -89,5 +91,17 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
+    }
+
+    /**
+     * {@code DelegatingPasswordEncoder} prefixa o hash com o algoritmo usado
+     * ({@code {bcrypt}$2a$...}). É o que permite trocar de algoritmo no futuro sem
+     * invalidar as senhas já gravadas: cada hash carrega a informação de como conferi-lo.
+     * Um {@code BCryptPasswordEncoder} puro não guarda isso, e a migração depois exige
+     * forçar todo mundo a redefinir a senha.
+     */
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
 }
