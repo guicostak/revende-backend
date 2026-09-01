@@ -40,8 +40,8 @@ public class User {
     @Column(length = 20)
     private String phone;
 
-    @Column(name = "profile_picture", length = 500)
-    private String profilePicture;
+    @Column(name = "profile_picture_url", length = 500)
+    private String profilePictureUrl;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
@@ -50,7 +50,6 @@ public class User {
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified;
 
-    // dados de vendedor, exigidos pelo gateway no cadastro do recebedor
     @Column(length = 11)
     private String cpf;
 

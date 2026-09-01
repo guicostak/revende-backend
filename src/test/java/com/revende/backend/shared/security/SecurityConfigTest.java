@@ -5,9 +5,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.revende.backend.identity.application.port.in.RegisterUserUseCase;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -23,6 +25,12 @@ class SecurityConfigTest {
     @Autowired
     private MockMvc mockMvc;
 
+    // O slice carrega todos os controllers, e o AuthController depende do caso de uso.
+    // Este teste é sobre a cadeia de segurança, não sobre cadastro — o mock existe só
+    // para o contexto subir.
+    @MockBean
+    private RegisterUserUseCase registerUser;
+
     @Test
     void shouldNotChallengeWithHttpBasicOnProtectedRoute() throws Exception {
         mockMvc.perform(get("/api/listings"))
@@ -33,8 +41,9 @@ class SecurityConfigTest {
 
     @Test
     void shouldNotRequireAuthenticationOnAuthRoutes() throws Exception {
-        // Ainda não há controller de autenticação: 404 prova que a rota passou pela
-        // cadeia de segurança em vez de ser barrada por ela.
+        // `/api/auth/login` ainda não tem handler — só o cadastro foi implementado.
+        // 404 em vez de 401 prova que a rota atravessou a cadeia de segurança em vez de
+        // ser barrada por ela, que é o que este teste verifica.
         mockMvc.perform(get("/api/auth/login")).andExpect(status().isNotFound());
     }
 
