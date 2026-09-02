@@ -2,6 +2,7 @@ package com.revende.backend.identity.adapter.out.persistence;
 
 import com.revende.backend.identity.application.port.out.UserRepositoryPort;
 import com.revende.backend.identity.entity.User;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -15,6 +16,16 @@ public class UserPersistenceAdapter implements UserRepositoryPort {
     @Override
     public boolean existsByEmail(String email) {
         return repository.existsByEmail(email);
+    }
+
+    @Override
+    public Optional<User> findByEmail(String email) {
+        return repository.findByEmail(email);
+    }
+
+    @Override
+    public Optional<User> findById(Long id) {
+        return repository.findById(id);
     }
 
     @Override

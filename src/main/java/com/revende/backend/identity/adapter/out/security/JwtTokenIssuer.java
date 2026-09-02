@@ -26,7 +26,7 @@ public class JwtTokenIssuer implements TokenIssuerPort {
     }
 
     @Override
-    public String issueFor(Long userId, String email) {
+    public String issueAccessToken(Long userId, String email) {
         Instant agora = Instant.now();
         return Jwts.builder()
                 // `subject` é o id, não o e-mail: e-mail pode mudar, id não. Identidade

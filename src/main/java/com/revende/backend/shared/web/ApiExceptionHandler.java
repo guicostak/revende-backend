@@ -1,6 +1,8 @@
 package com.revende.backend.shared.web;
 
 import com.revende.backend.identity.application.EmailAlreadyRegisteredException;
+import com.revende.backend.identity.application.InvalidCredentialsException;
+import com.revende.backend.identity.application.InvalidRefreshTokenException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -34,6 +36,17 @@ public class ApiExceptionHandler {
     public ResponseEntity<ErrorResponse> handleEmailTaken(EmailAlreadyRegisteredException exception) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ErrorResponse.of(HttpStatus.CONFLICT.value(), exception.getMessage()));
+    }
+
+    /**
+     * Credencial inválida e sessão expirada são 401, com a mensagem que a própria exceção
+     * carrega — que é genérica de propósito, para não diferenciar e-mail inexistente de
+     * senha errada.
+     */
+    @ExceptionHandler({InvalidCredentialsException.class, InvalidRefreshTokenException.class})
+    public ResponseEntity<ErrorResponse> handleUnauthenticated(RuntimeException exception) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ErrorResponse.of(HttpStatus.UNAUTHORIZED.value(), exception.getMessage()));
     }
 
     /**
