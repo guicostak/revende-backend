@@ -39,7 +39,12 @@ management:
 revende:
   jwt:
     secret: ${REVENDE_JWT_SECRET:dev-only-nao-use-em-producao-troque-por-env-var-32bytes+}
-    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+    # Access token: 1 hora. Ele não é revogável — a janela de estrago de um vazamento é
+    # exatamente esta, e por isso é curta.
+    expiration-ms: ${JWT_EXPIRATION_MS:3600000}
+    # Refresh token: 7 dias. Pode ser longo porque mora no banco, é revogável a qualquer
+    # momento e é rotacionado a cada uso.
+    refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}
   cors:
     # Lista separada por vírgula. Em produção, o domínio real do front.
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}

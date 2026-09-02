@@ -67,6 +67,12 @@
       <artifactId>flyway-database-postgresql</artifactId>
     </dependency>
 
+    <!-- Cache local por instância: evita ida ao banco na validação de cada access token. -->
+    <dependency>
+      <groupId>com.github.ben-manes.caffeine</groupId>
+      <artifactId>caffeine</artifactId>
+    </dependency>
+
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>

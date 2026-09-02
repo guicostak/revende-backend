@@ -15,6 +15,7 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -39,8 +40,11 @@ public class SecurityConfig {
     private static final String[] PROBE_ROUTES = {"/actuator/health", "/actuator/health/**"};
 
     @Bean
-    public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain apiFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter) throws Exception {
         return http
+                // Antes do filtro de usuário e senha porque é ele quem popula o contexto
+                // nesta API: não há formulário de login, a credencial é o Bearer token.
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 // Resolve pelo *nome* do bean (`corsConfigurationSource`), de propósito.
                 // Injetar por tipo seria ambíguo: o `mvcHandlerMappingIntrospector` do
                 // Spring MVC também implementa CorsConfigurationSource.

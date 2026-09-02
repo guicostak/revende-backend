@@ -3,7 +3,6 @@ package com.revende.backend.identity.application.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -13,7 +12,6 @@ import com.revende.backend.identity.application.EmailAlreadyRegisteredException;
 import com.revende.backend.identity.application.port.in.AuthenticatedUser;
 import com.revende.backend.identity.application.port.in.RegisterUserCommand;
 import com.revende.backend.identity.application.port.out.PasswordHasherPort;
-import com.revende.backend.identity.application.port.out.TokenIssuerPort;
 import com.revende.backend.identity.application.port.out.UserRepositoryPort;
 import com.revende.backend.identity.entity.User;
 import com.revende.backend.identity.model.AccountStatus;
@@ -34,13 +32,13 @@ class RegisterUserServiceTest {
     private PasswordHasherPort passwordHasher;
 
     @Mock
-    private TokenIssuerPort tokenIssuer;
+    private SessionIssuer sessionIssuer;
 
     private RegisterUserService service;
 
     @BeforeEach
     void setUp() {
-        service = new RegisterUserService(users, passwordHasher, tokenIssuer);
+        service = new RegisterUserService(users, passwordHasher, sessionIssuer);
     }
 
     private RegisterUserCommand comando() {
@@ -55,17 +53,22 @@ class RegisterUserServiceTest {
             recebido.setId(42L);
             return recebido;
         });
-        when(tokenIssuer.issueFor(anyLong(), anyString())).thenReturn("token-jwt");
+        when(sessionIssuer.issueFor(any(User.class))).thenAnswer(invocation -> {
+            User salvo = invocation.getArgument(0);
+            return new AuthenticatedUser(
+                    "token-jwt", "refresh-token", salvo.getId(), salvo.getName(), salvo.getEmail());
+        });
     }
 
     @Test
-    void shouldReturnAuthenticatedUserWhenRegistrationSucceeds() {
+    void shouldReturnAuthenticatedUserWithBothTokens() {
         aceitaCadastro();
 
         AuthenticatedUser resultado = service.register(comando());
 
         assertThat(resultado.userId()).isEqualTo(42L);
         assertThat(resultado.token()).isEqualTo("token-jwt");
+        assertThat(resultado.refreshToken()).isEqualTo("refresh-token");
         assertThat(resultado.name()).isEqualTo("Ana Souza");
         assertThat(resultado.email()).isEqualTo("ana@exemplo.com");
     }
@@ -129,7 +132,7 @@ class RegisterUserServiceTest {
         assertThatThrownBy(() -> service.register(comando())).isInstanceOf(EmailAlreadyRegisteredException.class);
 
         verify(users, never()).save(any());
-        verify(tokenIssuer, never()).issueFor(anyLong(), anyString());
+        verify(sessionIssuer, never()).issueFor(any());
     }
 
     @Test
