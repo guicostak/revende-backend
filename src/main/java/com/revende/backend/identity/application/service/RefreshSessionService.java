@@ -24,8 +24,13 @@ public class RefreshSessionService implements RefreshSessionUseCase {
     private final RefreshTokenCodecPort refreshTokenCodec;
     private final SessionIssuer sessionIssuer;
 
+    /**
+     * {@code noRollbackFor} é obrigatório aqui: a detecção de reuso grava a revogação em
+     * massa e logo em seguida lança. Sem isto o rollback padrão desfaz o UPDATE e a reação
+     * ao roubo vira um no-op — o atacante segue com a sessão viva.
+     */
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = InvalidRefreshTokenException.class)
     public AuthenticatedUser refresh(String rawRefreshToken) {
         Instant agora = Instant.now();
 
@@ -33,11 +38,8 @@ public class RefreshSessionService implements RefreshSessionUseCase {
                 .findByTokenHash(refreshTokenCodec.hash(rawRefreshToken))
                 .orElseThrow(InvalidRefreshTokenException::new);
 
-        // Token já revogado reaparecendo é sinal de roubo: o legítimo já rotacionou. Cai a
-        // sessão inteira, não só este token.
         if (guardado.isRevoked()) {
-            refreshTokens.revokeAllForUser(guardado.getUserId(), agora);
-            throw new InvalidRefreshTokenException();
+            throw reusoDetectado(guardado.getUserId(), agora);
         }
 
         if (guardado.isExpiredAt(agora)) {
@@ -50,9 +52,19 @@ public class RefreshSessionService implements RefreshSessionUseCase {
             throw new InvalidRefreshTokenException();
         }
 
-        guardado.setRevokedAt(agora);
-        refreshTokens.save(guardado);
+        // UPDATE condicional: é o banco que decide quem rotacionou primeiro. Ler e depois
+        // gravar deixaria duas requisições concorrentes passarem as duas pela checagem de
+        // `isRevoked` acima, e o token single-use valeria duas vezes.
+        if (!refreshTokens.revokeIfActive(guardado.getId(), agora)) {
+            throw reusoDetectado(guardado.getUserId(), agora);
+        }
 
         return sessionIssuer.issueFor(user);
+    }
+
+    /** Token apresentado duas vezes: ou foi roubado, ou vazou. A sessão inteira cai. */
+    private InvalidRefreshTokenException reusoDetectado(Long userId, Instant momento) {
+        refreshTokens.revokeAllForUser(userId, momento);
+        return new InvalidRefreshTokenException();
     }
 }

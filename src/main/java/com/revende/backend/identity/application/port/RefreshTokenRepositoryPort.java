@@ -12,9 +12,13 @@ public interface RefreshTokenRepositoryPort {
     Optional<RefreshToken> findByTokenHash(String tokenHash);
 
     /**
-     * Revoga tudo do usuário de uma vez. É a reação ao reuso detectado: se um token já
-     * revogado reaparece, ou ele foi roubado ou o cliente está confuso — nos dois casos a
-     * resposta segura é derrubar a sessão inteira e obrigar um login novo.
+     * Revoga o token só se ainda estiver ativo, em um UPDATE condicional único.
+     *
+     * @return {@code false} se outra requisição já o revogou — ou seja, este token está
+     *     sendo apresentado pela segunda vez
      */
+    boolean revokeIfActive(Long tokenId, Instant momento);
+
+    /** Reação ao reuso: derruba a sessão inteira e obriga login novo. */
     void revokeAllForUser(Long userId, Instant momento);
 }

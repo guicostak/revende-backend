@@ -47,9 +47,4 @@ public class RefreshToken {
     public boolean isExpiredAt(Instant momento) {
         return expiresAt.isBefore(momento);
     }
-
-    /** Utilizável é o que não foi revogado e ainda não venceu. As duas coisas, sempre. */
-    public boolean isUsableAt(Instant momento) {
-        return !isRevoked() && !isExpiredAt(momento);
-    }
 }

@@ -24,6 +24,11 @@ public class RefreshTokenPersistenceAdapter implements RefreshTokenRepositoryPor
     }
 
     @Override
+    public boolean revokeIfActive(Long tokenId, Instant momento) {
+        return repository.revokeIfActive(tokenId, momento) == 1;
+    }
+
+    @Override
     public void revokeAllForUser(Long userId, Instant momento) {
         repository.revokeAllForUser(userId, momento);
     }
