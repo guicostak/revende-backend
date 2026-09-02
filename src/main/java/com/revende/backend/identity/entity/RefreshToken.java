@@ -12,13 +12,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Sessão de longa duração. Guarda o hash do token, nunca o token.
- *
- * <p>{@code userId} é campo simples e não {@code @ManyToOne}: a validação do refresh
- * precisa do id do dono e de mais nada, e uma associação traria o agregado inteiro do
- * usuário para uma operação que não olha nenhum outro campo dele.
- */
+/** Sessão de longa duração. Guarda o hash do token, nunca o token. */
 @Entity
 @Table(name = "refresh_tokens")
 @Data

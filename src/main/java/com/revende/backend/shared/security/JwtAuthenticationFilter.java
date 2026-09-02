@@ -70,8 +70,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .parseSignedClaims(token)
                     .getPayload();
             return Optional.of(Long.valueOf(claims.getSubject()));
-            // `IllegalArgumentException` cobre o `NumberFormatException` de um subject que não
-            // seja numérico, e também o token vazio que a jjwt recusa.
         } catch (JwtException | IllegalArgumentException e) {
             // Assinatura inválida, token vencido ou malformado: tratados igual, como
             // "não autenticado". Não é catch silencioso — é a decisão de não distinguir

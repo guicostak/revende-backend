@@ -10,10 +10,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.revende.backend.identity.application.InvalidRefreshTokenException;
-import com.revende.backend.identity.application.port.in.AuthenticatedUser;
-import com.revende.backend.identity.application.port.out.RefreshTokenRepositoryPort;
-import com.revende.backend.identity.application.port.out.TokenHasherPort;
-import com.revende.backend.identity.application.port.out.UserRepositoryPort;
+import com.revende.backend.identity.application.port.AuthenticatedUser;
+import com.revende.backend.identity.application.port.RefreshTokenCodecPort;
+import com.revende.backend.identity.application.port.RefreshTokenRepositoryPort;
+import com.revende.backend.identity.application.port.UserRepositoryPort;
 import com.revende.backend.identity.entity.RefreshToken;
 import com.revende.backend.identity.entity.User;
 import com.revende.backend.identity.model.AccountStatus;
@@ -40,7 +40,7 @@ class RefreshSessionServiceTest {
     private UserRepositoryPort users;
 
     @Mock
-    private TokenHasherPort tokenHasher;
+    private RefreshTokenCodecPort refreshTokenCodec;
 
     @Mock
     private SessionIssuer sessionIssuer;
@@ -49,7 +49,7 @@ class RefreshSessionServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new RefreshSessionService(refreshTokens, users, tokenHasher, sessionIssuer);
+        service = new RefreshSessionService(refreshTokens, users, refreshTokenCodec, sessionIssuer);
     }
 
     private RefreshToken tokenValido() {
@@ -74,7 +74,7 @@ class RefreshSessionServiceTest {
     @Test
     void shouldRotateTokenAndIssueNewSession() {
         RefreshToken guardado = tokenValido();
-        when(tokenHasher.hash(TOKEN_PURO)).thenReturn(TOKEN_HASH);
+        when(refreshTokenCodec.hash(TOKEN_PURO)).thenReturn(TOKEN_HASH);
         when(refreshTokens.findByTokenHash(TOKEN_HASH)).thenReturn(Optional.of(guardado));
         when(users.findById(7L)).thenReturn(Optional.of(usuarioAtivo()));
         when(sessionIssuer.issueFor(any(User.class)))
@@ -93,7 +93,7 @@ class RefreshSessionServiceTest {
 
     @Test
     void shouldQueryByHashNeverByRawToken() {
-        when(tokenHasher.hash(TOKEN_PURO)).thenReturn(TOKEN_HASH);
+        when(refreshTokenCodec.hash(TOKEN_PURO)).thenReturn(TOKEN_HASH);
         when(refreshTokens.findByTokenHash(TOKEN_HASH)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.refresh(TOKEN_PURO)).isInstanceOf(InvalidRefreshTokenException.class);
@@ -107,7 +107,7 @@ class RefreshSessionServiceTest {
     void shouldRevokeEveryTokenOfUserWhenAlreadyUsedTokenReappears() {
         RefreshToken jaRevogado = tokenValido();
         jaRevogado.setRevokedAt(Instant.now().minus(1, ChronoUnit.MINUTES));
-        when(tokenHasher.hash(anyString())).thenReturn(TOKEN_HASH);
+        when(refreshTokenCodec.hash(anyString())).thenReturn(TOKEN_HASH);
         when(refreshTokens.findByTokenHash(TOKEN_HASH)).thenReturn(Optional.of(jaRevogado));
 
         assertThatThrownBy(() -> service.refresh(TOKEN_PURO)).isInstanceOf(InvalidRefreshTokenException.class);
@@ -121,7 +121,7 @@ class RefreshSessionServiceTest {
     void shouldRejectExpiredTokenWithoutRevokingTheWholeSession() {
         RefreshToken vencido = tokenValido();
         vencido.setExpiresAt(Instant.now().minus(1, ChronoUnit.DAYS));
-        when(tokenHasher.hash(anyString())).thenReturn(TOKEN_HASH);
+        when(refreshTokenCodec.hash(anyString())).thenReturn(TOKEN_HASH);
         when(refreshTokens.findByTokenHash(TOKEN_HASH)).thenReturn(Optional.of(vencido));
 
         assertThatThrownBy(() -> service.refresh(TOKEN_PURO)).isInstanceOf(InvalidRefreshTokenException.class);
@@ -132,7 +132,7 @@ class RefreshSessionServiceTest {
 
     @Test
     void shouldRejectWhenAccountIsNoLongerActive() {
-        when(tokenHasher.hash(anyString())).thenReturn(TOKEN_HASH);
+        when(refreshTokenCodec.hash(anyString())).thenReturn(TOKEN_HASH);
         when(refreshTokens.findByTokenHash(TOKEN_HASH)).thenReturn(Optional.of(tokenValido()));
         User bloqueado = usuarioAtivo();
         bloqueado.setStatus(AccountStatus.BLOCKED);
