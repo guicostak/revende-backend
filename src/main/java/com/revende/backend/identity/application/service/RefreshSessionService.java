@@ -22,10 +22,9 @@ public class RefreshSessionService implements RefreshSessionUseCase {
     private final UserRepositoryPort users;
     private final RefreshTokenCodecPort refreshTokenCodec;
     private final SessionIssuer sessionIssuer;
-    private final SessionRevoker sessionRevoker;
 
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = InvalidRefreshTokenException.class)
     public AuthenticatedUser refresh(String rawRefreshToken) {
         Instant agora = Instant.now();
 
@@ -55,7 +54,7 @@ public class RefreshSessionService implements RefreshSessionUseCase {
     }
 
     private InvalidRefreshTokenException reusoDetectado(Long userId, Instant momento) {
-        sessionRevoker.revokeAllForUser(userId, momento);
+        refreshTokens.revokeAllForUser(userId, momento);
         return new InvalidRefreshTokenException();
     }
 }
