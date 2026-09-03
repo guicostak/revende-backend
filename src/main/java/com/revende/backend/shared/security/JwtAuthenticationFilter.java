@@ -20,13 +20,6 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-/**
- * Lê o access token do header {@code Authorization} e popula o contexto de segurança.
- *
- * <p>O filtro nunca rejeita: token ausente ou inválido apenas deixa o contexto vazio, e
- * quem decide o que fazer com isso é a cadeia de autorização. Rejeitar aqui quebraria as
- * rotas públicas, que precisam funcionar sem token.
- */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -70,20 +63,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .parseSignedClaims(token)
                     .getPayload();
             return Optional.of(Long.valueOf(claims.getSubject()));
-            // `IllegalArgumentException` cobre o `NumberFormatException` de um subject que não
-            // seja numérico, e também o token vazio que a jjwt recusa.
         } catch (JwtException | IllegalArgumentException e) {
-            // Assinatura inválida, token vencido ou malformado: tratados igual, como
-            // "não autenticado". Não é catch silencioso — é a decisão de não distinguir
-            // os motivos para quem chamou, que só ajudaria quem estiver sondando.
-            // O contexto fica vazio e a cadeia de autorização responde 401.
             return Optional.empty();
         }
     }
 
     private void autenticar(AuthenticatedPrincipal principal, HttpServletRequest request) {
-        // Sem roles por enquanto: o modelo não tem papéis, e inventar um "ROLE_USER" vazio
-        // só criaria a ilusão de autorização onde só existe autenticação.
         var authentication = new UsernamePasswordAuthenticationToken(principal, null, List.of());
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authentication);

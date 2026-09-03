@@ -6,7 +6,6 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-/** Implementa o port de saída com Spring Data. Sem regra de negócio, só tradução. */
 @Component
 @RequiredArgsConstructor
 public class UserPersistenceAdapter implements UserRepositoryPort {
