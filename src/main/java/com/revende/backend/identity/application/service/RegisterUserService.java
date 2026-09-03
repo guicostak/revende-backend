@@ -13,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Orquestra o cadastro: unicidade do e-mail, hash da senha, persistência e sessão. */
 @Service
 @RequiredArgsConstructor
 public class RegisterUserService implements RegisterUserUseCase {
@@ -27,9 +26,6 @@ public class RegisterUserService implements RegisterUserUseCase {
     public AuthenticatedUser register(RegisterUserCommand command) {
         String email = EmailNormalizer.normalize(command.email());
 
-        // Checagem antecipada para responder 409 com mensagem clara. Ela NÃO substitui a
-        // constraint UNIQUE do banco: entre o `exists` e o `save` cabe outra requisição
-        // com o mesmo e-mail. A constraint é quem garante; isto é só a mensagem boa.
         if (users.existsByEmail(email)) {
             throw new EmailAlreadyRegisteredException();
         }
@@ -41,8 +37,6 @@ public class RegisterUserService implements RegisterUserUseCase {
                 .passwordHash(passwordHasher.hash(command.rawPassword()))
                 .phone(blankToNull(command.phone()))
                 .status(AccountStatus.ACTIVE)
-                // Conta nasce não verificada. Quem cadastra entra e navega; o que exigir
-                // e-mail confirmado é decisão de cada caso de uso, não do cadastro.
                 .emailVerified(false)
                 .createdAt(agora)
                 .updatedAt(agora)
@@ -51,7 +45,6 @@ public class RegisterUserService implements RegisterUserUseCase {
         return sessionIssuer.issueFor(salvo);
     }
 
-    /** String vazia vinda de formulário é ausência de dado, e no banco isso é {@code NULL}. */
     private String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
     }
