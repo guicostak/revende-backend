@@ -1,11 +1,11 @@
 package com.revende.backend.identity.application.service;
 
 import com.revende.backend.identity.application.EmailAlreadyRegisteredException;
-import com.revende.backend.identity.application.port.in.AuthenticatedUser;
-import com.revende.backend.identity.application.port.in.RegisterUserCommand;
-import com.revende.backend.identity.application.port.in.RegisterUserUseCase;
-import com.revende.backend.identity.application.port.out.PasswordHasherPort;
-import com.revende.backend.identity.application.port.out.UserRepositoryPort;
+import com.revende.backend.identity.application.port.AuthenticatedUser;
+import com.revende.backend.identity.application.port.PasswordHasherPort;
+import com.revende.backend.identity.application.port.RegisterUserCommand;
+import com.revende.backend.identity.application.port.RegisterUserUseCase;
+import com.revende.backend.identity.application.port.UserRepositoryPort;
 import com.revende.backend.identity.entity.User;
 import com.revende.backend.identity.model.AccountStatus;
 import java.time.Instant;

@@ -1,10 +1,10 @@
 package com.revende.backend.identity.application.service;
 
-import com.revende.backend.identity.application.port.in.AuthenticatedUser;
-import com.revende.backend.identity.application.port.out.RefreshTokenRepositoryPort;
-import com.revende.backend.identity.application.port.out.TokenGeneratorPort;
-import com.revende.backend.identity.application.port.out.TokenHasherPort;
-import com.revende.backend.identity.application.port.out.TokenIssuerPort;
+import com.revende.backend.identity.application.port.AuthenticatedUser;
+import com.revende.backend.identity.application.port.RefreshTokenRepositoryPort;
+import com.revende.backend.identity.application.port.TokenGeneratorPort;
+import com.revende.backend.identity.application.port.TokenHasherPort;
+import com.revende.backend.identity.application.port.TokenIssuerPort;
 import com.revende.backend.identity.entity.RefreshToken;
 import com.revende.backend.identity.entity.User;
 import com.revende.backend.shared.security.JwtProperties;

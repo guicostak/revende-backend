@@ -1,11 +1,11 @@
 package com.revende.backend.identity.application.service;
 
 import com.revende.backend.identity.application.InvalidCredentialsException;
-import com.revende.backend.identity.application.port.in.AuthenticatedUser;
-import com.revende.backend.identity.application.port.in.LoginCommand;
-import com.revende.backend.identity.application.port.in.LoginUseCase;
-import com.revende.backend.identity.application.port.out.PasswordHasherPort;
-import com.revende.backend.identity.application.port.out.UserRepositoryPort;
+import com.revende.backend.identity.application.port.AuthenticatedUser;
+import com.revende.backend.identity.application.port.LoginCommand;
+import com.revende.backend.identity.application.port.LoginUseCase;
+import com.revende.backend.identity.application.port.PasswordHasherPort;
+import com.revende.backend.identity.application.port.UserRepositoryPort;
 import com.revende.backend.identity.entity.User;
 import com.revende.backend.identity.model.AccountStatus;
 import java.util.Optional;

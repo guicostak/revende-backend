@@ -2,7 +2,7 @@ package com.revende.backend.shared.security;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.revende.backend.identity.application.port.out.UserRepositoryPort;
+import com.revende.backend.identity.application.port.UserRepositoryPort;
 import com.revende.backend.identity.entity.User;
 import com.revende.backend.identity.model.AccountStatus;
 import java.time.Duration;
