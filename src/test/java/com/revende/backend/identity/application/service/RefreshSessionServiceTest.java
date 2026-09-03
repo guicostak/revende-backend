@@ -23,7 +23,6 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -77,6 +76,7 @@ class RefreshSessionServiceTest {
         when(refreshTokenCodec.hash(TOKEN_PURO)).thenReturn(TOKEN_HASH);
         when(refreshTokens.findByTokenHash(TOKEN_HASH)).thenReturn(Optional.of(guardado));
         when(users.findById(7L)).thenReturn(Optional.of(usuarioAtivo()));
+        when(refreshTokens.revokeIfActive(eq(1L), any(Instant.class))).thenReturn(true);
         when(sessionIssuer.issueFor(any(User.class)))
                 .thenReturn(new AuthenticatedUser("novo-access", "novo-refresh", 7L, "Ana", "ana@exemplo.com"));
 
@@ -85,10 +85,9 @@ class RefreshSessionServiceTest {
         assertThat(resultado.token()).isEqualTo("novo-access");
         assertThat(resultado.refreshToken()).isEqualTo("novo-refresh");
 
-        // O token apresentado precisa morrer: refresh token vale uma vez só.
-        ArgumentCaptor<RefreshToken> revogado = ArgumentCaptor.forClass(RefreshToken.class);
-        verify(refreshTokens).save(revogado.capture());
-        assertThat(revogado.getValue().getRevokedAt()).isNotNull();
+        // A rotação sai por UPDATE condicional, não por save da entidade lida — é o
+        // banco que decide quem chegou primeiro.
+        verify(refreshTokens).revokeIfActive(eq(1L), any(Instant.class));
     }
 
     @Test
@@ -142,6 +141,20 @@ class RefreshSessionServiceTest {
         // até vencer, e é a recusa da renovação que encerra a sessão.
         assertThatThrownBy(() -> service.refresh(TOKEN_PURO)).isInstanceOf(InvalidRefreshTokenException.class);
 
+        verify(sessionIssuer, never()).issueFor(any());
+    }
+
+    @Test
+    void shouldTreatLostRotationRaceAsReuse() {
+        when(refreshTokenCodec.hash(anyString())).thenReturn(TOKEN_HASH);
+        when(refreshTokens.findByTokenHash(TOKEN_HASH)).thenReturn(Optional.of(tokenValido()));
+        when(users.findById(7L)).thenReturn(Optional.of(usuarioAtivo()));
+        // Outra requisição rotacionou o mesmo token entre a leitura e o UPDATE.
+        when(refreshTokens.revokeIfActive(eq(1L), any(Instant.class))).thenReturn(false);
+
+        assertThatThrownBy(() -> service.refresh(TOKEN_PURO)).isInstanceOf(InvalidRefreshTokenException.class);
+
+        verify(refreshTokens).revokeAllForUser(eq(7L), any(Instant.class));
         verify(sessionIssuer, never()).issueFor(any());
     }
 }

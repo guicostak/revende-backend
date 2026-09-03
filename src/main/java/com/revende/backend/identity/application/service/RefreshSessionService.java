@@ -24,7 +24,7 @@ public class RefreshSessionService implements RefreshSessionUseCase {
     private final SessionIssuer sessionIssuer;
 
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = InvalidRefreshTokenException.class)
     public AuthenticatedUser refresh(String rawRefreshToken) {
         Instant agora = Instant.now();
 
@@ -33,8 +33,7 @@ public class RefreshSessionService implements RefreshSessionUseCase {
                 .orElseThrow(InvalidRefreshTokenException::new);
 
         if (guardado.isRevoked()) {
-            refreshTokens.revokeAllForUser(guardado.getUserId(), agora);
-            throw new InvalidRefreshTokenException();
+            throw reusoDetectado(guardado.getUserId(), agora);
         }
 
         if (guardado.isExpiredAt(agora)) {
@@ -47,9 +46,15 @@ public class RefreshSessionService implements RefreshSessionUseCase {
             throw new InvalidRefreshTokenException();
         }
 
-        guardado.setRevokedAt(agora);
-        refreshTokens.save(guardado);
+        if (!refreshTokens.revokeIfActive(guardado.getId(), agora)) {
+            throw reusoDetectado(guardado.getUserId(), agora);
+        }
 
         return sessionIssuer.issueFor(user);
+    }
+
+    private InvalidRefreshTokenException reusoDetectado(Long userId, Instant momento) {
+        refreshTokens.revokeAllForUser(userId, momento);
+        return new InvalidRefreshTokenException();
     }
 }
