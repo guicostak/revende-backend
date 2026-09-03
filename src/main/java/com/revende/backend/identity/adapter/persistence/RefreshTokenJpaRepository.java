@@ -12,11 +12,6 @@ public interface RefreshTokenJpaRepository extends JpaRepository<RefreshToken, L
 
     Optional<RefreshToken> findByTokenHash(String tokenHash);
 
-    /**
-     * Revogação em massa por UPDATE único. Carregar as entidades para revogar uma a uma
-     * custaria N queries num caminho que só roda quando já há suspeita de roubo — momento
-     * em que a resposta precisa ser rápida e completa.
-     */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(
             """

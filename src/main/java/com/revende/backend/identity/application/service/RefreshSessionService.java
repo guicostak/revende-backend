@@ -14,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Troca um refresh token por um par novo, com rotação e detecção de reuso. */
 @Service
 @RequiredArgsConstructor
 public class RefreshSessionService implements RefreshSessionUseCase {
@@ -33,10 +32,6 @@ public class RefreshSessionService implements RefreshSessionUseCase {
                 .findByTokenHash(refreshTokenCodec.hash(rawRefreshToken))
                 .orElseThrow(InvalidRefreshTokenException::new);
 
-        // Token já revogado reaparecendo é o sinal clássico de roubo: o legítimo já
-        // rotacionou, então quem está apresentando este é outra pessoa — ou o dono com uma
-        // cópia vazada circulando. Nos dois casos a resposta segura é a mesma: derrubar a
-        // sessão inteira e obrigar login novo. Um refresh token vale uma vez só.
         if (guardado.isRevoked()) {
             refreshTokens.revokeAllForUser(guardado.getUserId(), agora);
             throw new InvalidRefreshTokenException();
@@ -48,14 +43,10 @@ public class RefreshSessionService implements RefreshSessionUseCase {
 
         User user = users.findById(guardado.getUserId()).orElseThrow(InvalidRefreshTokenException::new);
 
-        // Conta bloqueada depois do login não pode renovar. É aqui que o bloqueio começa a
-        // valer de fato: o access token anterior ainda vale até vencer, e é a recusa da
-        // renovação que encerra a sessão.
         if (user.getStatus() != AccountStatus.ACTIVE) {
             throw new InvalidRefreshTokenException();
         }
 
-        // Rotação: o apresentado morre agora, e o novo nasce no `issueFor`.
         guardado.setRevokedAt(agora);
         refreshTokens.save(guardado);
 

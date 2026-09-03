@@ -11,13 +11,6 @@ import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-/**
- * Emite o par de tokens e persiste a sessão.
- *
- * <p>Existe porque cadastro, login e renovação terminam exatamente do mesmo jeito. Sem
- * isto, a regra de "gera opaco, guarda o hash, devolve o texto puro" ficaria copiada em
- * três lugares — e bastaria um deles esquecer de hashear para vazar sessão.
- */
 @Component
 @RequiredArgsConstructor
 public class SessionIssuer {
@@ -30,8 +23,6 @@ public class SessionIssuer {
     public AuthenticatedUser issueFor(User user) {
         Instant agora = Instant.now();
 
-        // O texto puro existe só nesta variável e só até virar resposta HTTP. O que vai
-        // para o banco é o hash.
         String refreshTokenPuro = refreshTokenCodec.generate();
 
         refreshTokens.save(RefreshToken.builder()
