@@ -10,13 +10,6 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-/**
- * Cache local de quem está ativo, consultado na validação de cada access token.
- *
- * <p>Local à instância: N instâncias, N cópias que não se falam. Tolerável aqui, porque o
- * pior efeito é um bloqueio demorar até o TTL para pegar. Seria errado para refresh token,
- * onde a instância A revogaria e a B continuaria aceitando — por isso ele fica no banco.
- */
 @Component
 @RequiredArgsConstructor
 public class ActiveUserCache {
@@ -26,14 +19,9 @@ public class ActiveUserCache {
 
     private final UserRepositoryPort users;
 
-    private final Cache<Long, AuthenticatedPrincipal> cache = Caffeine.newBuilder()
-            // `afterWrite`, não `afterAccess`: com este, usuário ativo renovaria a entrada
-            // para sempre e o bloqueio nunca pegaria.
-            .expireAfterWrite(TTL)
-            .maximumSize(CAPACIDADE)
-            .build();
+    private final Cache<Long, AuthenticatedPrincipal> cache =
+            Caffeine.newBuilder().expireAfterWrite(TTL).maximumSize(CAPACIDADE).build();
 
-    /** Vazio para conta inexistente ou bloqueada. Nenhum dos dois é cacheado. */
     public Optional<AuthenticatedPrincipal> find(Long userId) {
         AuthenticatedPrincipal cacheado = cache.getIfPresent(userId);
         if (cacheado != null) {
@@ -48,7 +36,6 @@ public class ActiveUserCache {
         return encontrado;
     }
 
-    /** Chame ao bloquear conta ou trocar e-mail, para não esperar o TTL. */
     public void invalidate(Long userId) {
         cache.invalidate(userId);
     }

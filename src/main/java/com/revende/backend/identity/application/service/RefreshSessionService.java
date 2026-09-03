@@ -14,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Troca um refresh token por um par novo, com rotação e detecção de reuso. */
 @Service
 @RequiredArgsConstructor
 public class RefreshSessionService implements RefreshSessionUseCase {
@@ -23,14 +22,10 @@ public class RefreshSessionService implements RefreshSessionUseCase {
     private final UserRepositoryPort users;
     private final RefreshTokenCodecPort refreshTokenCodec;
     private final SessionIssuer sessionIssuer;
+    private final SessionRevoker sessionRevoker;
 
-    /**
-     * {@code noRollbackFor} é obrigatório aqui: a detecção de reuso grava a revogação em
-     * massa e logo em seguida lança. Sem isto o rollback padrão desfaz o UPDATE e a reação
-     * ao roubo vira um no-op — o atacante segue com a sessão viva.
-     */
     @Override
-    @Transactional(noRollbackFor = InvalidRefreshTokenException.class)
+    @Transactional
     public AuthenticatedUser refresh(String rawRefreshToken) {
         Instant agora = Instant.now();
 
@@ -52,9 +47,6 @@ public class RefreshSessionService implements RefreshSessionUseCase {
             throw new InvalidRefreshTokenException();
         }
 
-        // UPDATE condicional: é o banco que decide quem rotacionou primeiro. Ler e depois
-        // gravar deixaria duas requisições concorrentes passarem as duas pela checagem de
-        // `isRevoked` acima, e o token single-use valeria duas vezes.
         if (!refreshTokens.revokeIfActive(guardado.getId(), agora)) {
             throw reusoDetectado(guardado.getUserId(), agora);
         }
@@ -62,9 +54,8 @@ public class RefreshSessionService implements RefreshSessionUseCase {
         return sessionIssuer.issueFor(user);
     }
 
-    /** Token apresentado duas vezes: ou foi roubado, ou vazou. A sessão inteira cai. */
     private InvalidRefreshTokenException reusoDetectado(Long userId, Instant momento) {
-        refreshTokens.revokeAllForUser(userId, momento);
+        sessionRevoker.revokeAllForUser(userId, momento);
         return new InvalidRefreshTokenException();
     }
 }

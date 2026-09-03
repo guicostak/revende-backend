@@ -13,18 +13,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Autentica por e-mail e senha e abre uma sessão. */
 @Service
 @RequiredArgsConstructor
 public class LoginService implements LoginUseCase {
 
-    /**
-     * Hash descartável usado quando o e-mail não existe.
-     *
-     * <p>Sem isto, e-mail inexistente responderia sem passar pelo BCrypt e voltaria muito
-     * mais rápido que senha errada — e essa diferença de tempo é suficiente para enumerar
-     * quais e-mails têm conta. Conferir contra um hash falso iguala o custo dos dois casos.
-     */
     private static final String HASH_DESCARTAVEL =
             "{bcrypt}$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy";
 
@@ -41,8 +33,6 @@ public class LoginService implements LoginUseCase {
                 command.rawPassword(), encontrado.map(User::getPasswordHash).orElse(HASH_DESCARTAVEL));
 
         User user = encontrado.orElse(null);
-        // As três condições viram a mesma exceção de propósito: dizer qual delas falhou
-        // entregaria de graça a informação de quais e-mails existem e quais estão ativos.
         if (user == null || !senhaConfere || user.getStatus() != AccountStatus.ACTIVE) {
             throw new InvalidCredentialsException();
         }

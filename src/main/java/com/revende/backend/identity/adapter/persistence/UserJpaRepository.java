@@ -4,7 +4,6 @@ import com.revende.backend.identity.entity.User;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-/** Spring Data. Fica no adapter para que a aplicação não veja JPA. */
 public interface UserJpaRepository extends JpaRepository<User, Long> {
 
     boolean existsByEmail(String email);

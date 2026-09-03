@@ -12,7 +12,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/** Sessão de longa duração. Guarda o hash do token, nunca o token. */
 @Entity
 @Table(name = "refresh_tokens")
 @Data

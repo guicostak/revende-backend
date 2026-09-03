@@ -9,7 +9,6 @@ import java.util.Base64;
 import java.util.HexFormat;
 import org.springframework.stereotype.Component;
 
-/** Refresh token opaco: 256 bits aleatórios, guardado como SHA-256. */
 @Component
 public class RefreshTokenCodec implements RefreshTokenCodecPort {
 
@@ -25,7 +24,6 @@ public class RefreshTokenCodec implements RefreshTokenCodecPort {
         return encoder.encodeToString(bytes);
     }
 
-    /** Sem sal: a busca é por hash, e hash salgado não seria consultável. */
     @Override
     public String hash(String rawToken) {
         try {

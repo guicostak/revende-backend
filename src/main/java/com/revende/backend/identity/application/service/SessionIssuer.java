@@ -11,7 +11,6 @@ import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-/** Emite o par de tokens e persiste a sessão. Compartilhado por cadastro, login e refresh. */
 @Component
 @RequiredArgsConstructor
 public class SessionIssuer {

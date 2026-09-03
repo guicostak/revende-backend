@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.Instant;
 import java.util.Map;
 
-/** Contrato único de erro da API. {@code fields} só em falha de validação. */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record ErrorResponse(Instant timestamp, int status, String message, Map<String, String> fields) {
 

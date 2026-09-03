@@ -20,7 +20,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-/** Cadeia de segurança da API: stateless, Bearer token, nega por padrão. */
 @Configuration
 @EnableWebSecurity
 @EnableConfigurationProperties({CorsProperties.class, JwtProperties.class})
@@ -32,11 +31,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain apiFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter) throws Exception {
         return http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-                // Resolve pelo nome do bean `corsConfigurationSource`. Injetar por tipo é
-                // ambíguo: o mvcHandlerMappingIntrospector também implementa a interface.
                 .cors(Customizer.withDefaults())
-                // Válido ENQUANTO o token vier no header. Se a autenticação passar a usar
-                // cookie, esta linha vira vulnerabilidade real e o CSRF precisa voltar.
                 .csrf(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
@@ -66,7 +61,6 @@ public class SecurityConfig {
         return source;
     }
 
-    /** Delegating prefixa o hash com o algoritmo, o que permite trocá-lo sem invalidar senhas. */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();

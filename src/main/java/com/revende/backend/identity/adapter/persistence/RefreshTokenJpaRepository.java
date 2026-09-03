@@ -12,10 +12,6 @@ public interface RefreshTokenJpaRepository extends JpaRepository<RefreshToken, L
 
     Optional<RefreshToken> findByTokenHash(String tokenHash);
 
-    /**
-     * O {@code and t.revokedAt is null} é o que torna a rotação atômica: o banco decide
-     * quem chegou primeiro. Devolve 1 para quem revogou e 0 para quem chegou depois.
-     */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(
             """

@@ -44,11 +44,14 @@ class RefreshSessionServiceTest {
     @Mock
     private SessionIssuer sessionIssuer;
 
+    @Mock
+    private SessionRevoker sessionRevoker;
+
     private RefreshSessionService service;
 
     @BeforeEach
     void setUp() {
-        service = new RefreshSessionService(refreshTokens, users, refreshTokenCodec, sessionIssuer);
+        service = new RefreshSessionService(refreshTokens, users, refreshTokenCodec, sessionIssuer, sessionRevoker);
     }
 
     private RefreshToken tokenValido() {
@@ -112,7 +115,7 @@ class RefreshSessionServiceTest {
         assertThatThrownBy(() -> service.refresh(TOKEN_PURO)).isInstanceOf(InvalidRefreshTokenException.class);
 
         // Token já usado reaparecendo é sinal de roubo: a sessão inteira cai, não só ele.
-        verify(refreshTokens).revokeAllForUser(eq(7L), any(Instant.class));
+        verify(sessionRevoker).revokeAllForUser(eq(7L), any(Instant.class));
         verify(sessionIssuer, never()).issueFor(any());
     }
 
@@ -126,7 +129,7 @@ class RefreshSessionServiceTest {
         assertThatThrownBy(() -> service.refresh(TOKEN_PURO)).isInstanceOf(InvalidRefreshTokenException.class);
 
         // Vencer é o curso normal das coisas, não indício de roubo — não derruba o resto.
-        verify(refreshTokens, never()).revokeAllForUser(any(), any());
+        verify(sessionRevoker, never()).revokeAllForUser(any(), any());
     }
 
     @Test
@@ -154,7 +157,7 @@ class RefreshSessionServiceTest {
 
         assertThatThrownBy(() -> service.refresh(TOKEN_PURO)).isInstanceOf(InvalidRefreshTokenException.class);
 
-        verify(refreshTokens).revokeAllForUser(eq(7L), any(Instant.class));
+        verify(sessionRevoker).revokeAllForUser(eq(7L), any(Instant.class));
         verify(sessionIssuer, never()).issueFor(any());
     }
 }
