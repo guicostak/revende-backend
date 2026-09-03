@@ -9,10 +9,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.revende.backend.identity.application.EmailAlreadyRegisteredException;
-import com.revende.backend.identity.application.port.in.AuthenticatedUser;
-import com.revende.backend.identity.application.port.in.RegisterUserCommand;
-import com.revende.backend.identity.application.port.out.PasswordHasherPort;
-import com.revende.backend.identity.application.port.out.UserRepositoryPort;
+import com.revende.backend.identity.application.port.AuthenticatedUser;
+import com.revende.backend.identity.application.port.PasswordHasherPort;
+import com.revende.backend.identity.application.port.RegisterUserCommand;
+import com.revende.backend.identity.application.port.UserRepositoryPort;
 import com.revende.backend.identity.entity.User;
 import com.revende.backend.identity.model.AccountStatus;
 import org.junit.jupiter.api.BeforeEach;

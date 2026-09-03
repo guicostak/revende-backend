@@ -49,9 +49,9 @@ nesta escala.
         HTTP / CLI / Scheduler                   JPA / SMTP / HTTP client
                  │                                          │
         ┌────────▼─────────┐                     ┌──────────▼─────────┐
-        │  adapter/in/web  │                     │ adapter/out/persist│
+        │   adapter/web    │                     │ adapter/persistence│
         └────────┬─────────┘                     └──────────▲─────────┘
-                 │ chama port/in                  implementa │ port/out
+                 │ chama o port                   implementa │ o port
         ┌────────▼──────────────────────────────────────────┴─────────┐
         │                       application                            │
         │            (use cases: orquestra, transaciona)               │
@@ -71,12 +71,13 @@ com.revende.backend
      ├── entity/                     # classes @Entity — o que vira tabela
      ├── model/                      # enums e tipos de apoio que não viram tabela
      ├── application/
-     │   ├── port/in/                # interfaces de caso de uso
-     │   ├── port/out/               # interfaces do que o domínio precisa de fora
-     │   └── service/                # implementa port/in, usa port/out
+     │   ├── port/                  # interfaces: casos de uso e o que o domínio
+     │   │                          #   precisa de fora
+     │   └── service/                # implementa os casos de uso, usa os ports
      └── adapter/
-         ├── in/web/                 # controller + DTOs
-         └── out/persistence/        # Spring Data, implementa port/out
+         ├── web/                    # controller + DTOs
+         ├── persistence/            # Spring Data, implementa os ports
+         └── security/               # hash, emissão de token
 ```
 
 **`entity/` e `model/`:** uma classe por conceito, sem mapper entre domínio e persistência.
@@ -88,14 +89,15 @@ A entidade JPA *é* a entidade de domínio. O que separa os dois pacotes é ser 
 |---|---|---|
 | `entity/`, `model/` | `@Entity`, Lombok, enums, regras da própria entidade | Tipos HTTP, chamada a repositório, conhecer adapter |
 | `application/` | `@Service`, `@Transactional`, ports, orquestração | `ResponseEntity`, `Authentication`, SQL |
-| `adapter/in/web` | `@RestController`, DTOs, `@Valid`, mapeamento HTTP | Regra de negócio, acesso direto a repositório |
-| `adapter/out/persistence` | Spring Data, consultas | Regra de negócio, decisão de fluxo |
+| `adapter/web` | `@RestController`, DTOs, `@Valid`, mapeamento HTTP | Regra de negócio, acesso direto a repositório |
+| `adapter/persistence` | Spring Data, consultas | Regra de negócio, decisão de fluxo |
+| `adapter/security` | hash de senha, emissão de token | Regra de negócio, decisão de fluxo |
 
 ### 1.4 Regras não-negociáveis
 
-1. **Todo caso de uso é um port de entrada** (`application/port/in`). O controller depende
+1. **Todo caso de uso é um port de entrada** (`application/port`). O controller depende
    da interface, nunca da classe concreta.
-2. **Toda saída passa por um port** (`application/port/out`), implementado no adapter.
+2. **Toda saída passa por um port** (`application/port`), implementado no adapter.
    O `application` não importa `JpaRepository`.
 3. **DTO de web não entra na aplicação e entidade não sai pela web.** O mapeamento acontece
    na borda.
