@@ -46,8 +46,4 @@ public class RefreshToken {
     public boolean isExpiredAt(Instant momento) {
         return expiresAt.isBefore(momento);
     }
-
-    public boolean isUsableAt(Instant momento) {
-        return !isRevoked() && !isExpiredAt(momento);
-    }
 }
