@@ -3,8 +3,8 @@ package com.revende.backend.identity.application.service;
 import com.revende.backend.identity.application.InvalidRefreshTokenException;
 import com.revende.backend.identity.application.port.AuthenticatedUser;
 import com.revende.backend.identity.application.port.RefreshSessionUseCase;
+import com.revende.backend.identity.application.port.RefreshTokenCodecPort;
 import com.revende.backend.identity.application.port.RefreshTokenRepositoryPort;
-import com.revende.backend.identity.application.port.TokenHasherPort;
 import com.revende.backend.identity.application.port.UserRepositoryPort;
 import com.revende.backend.identity.entity.RefreshToken;
 import com.revende.backend.identity.entity.User;
@@ -21,7 +21,7 @@ public class RefreshSessionService implements RefreshSessionUseCase {
 
     private final RefreshTokenRepositoryPort refreshTokens;
     private final UserRepositoryPort users;
-    private final TokenHasherPort tokenHasher;
+    private final RefreshTokenCodecPort refreshTokenCodec;
     private final SessionIssuer sessionIssuer;
 
     @Override
@@ -30,7 +30,7 @@ public class RefreshSessionService implements RefreshSessionUseCase {
         Instant agora = Instant.now();
 
         RefreshToken guardado = refreshTokens
-                .findByTokenHash(tokenHasher.hash(rawRefreshToken))
+                .findByTokenHash(refreshTokenCodec.hash(rawRefreshToken))
                 .orElseThrow(InvalidRefreshTokenException::new);
 
         // Token já revogado reaparecendo é o sinal clássico de roubo: o legítimo já
